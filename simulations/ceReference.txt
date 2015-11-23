@@ -1,1 +1,0 @@
-../c_elegans/CHROMOSOME_I.fa
