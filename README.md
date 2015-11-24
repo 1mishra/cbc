@@ -5,6 +5,7 @@
        (described in a SAM file)              
 
 #########################################
+
 		Contact               
 		
 Please contact the authors for any bug/comment:
