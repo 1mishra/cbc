@@ -37,44 +37,22 @@ Recall that the purpose of the proposed method is to compress the aligned reads 
 1) Compress the reads contained in the SAM file
 2) Reconstruct the reads using the output of the compressor and the reference used for the alignment (to generate the SAM file)
 
-
 #########################################
 		Download
 #########################################
 
-1) Download the software from sourceForge. 
-Choose between Ubuntu 64 bits and MAC distributions.
-2) Unzip it: you will find the following folders and files
-
-- ProposedMethod
-	- README
-	- simulations
-		- main.c
-		- arith.inc
-		- input_file.inc 
-		- os_stream.inc
-		- sam_stream.inc
-		- stats.inc
-		- ceReference.txt 
-	- SAMfiles
-		- SRR065390_1_bowtie2_c_elegans_ws235.mapped.example.sam
-	- c_elegans
-		- CHROMOSOME_I.fa
-	- compressedFiles
-		- 
-	- reconstructedReads
-		-
+1) Download the software from github. (https://github.com/mikelhernaez/cbc) 
+2) Unzip it.
 
 #########################################
               Installation
 #########################################
 
-Go to the folder simulations, and run the following command:
-gcc -o main.run main.c
+Go to the main folder and run the following command:
 
-Alternatively, one can use
-main_MAC.run (if using MAC)
-main_Ubuntu64.run (if using Ubuntu 64 bits)
+$ make
+
+This will create a folder named "bin" where you will find the binary to run the program.
 
 #########################################
 		Usage
@@ -82,66 +60,21 @@ main_Ubuntu64.run (if using Ubuntu 64 bits)
 
 For an example on how to run the program and generate the necessary files, please see example below.
 
-1) Compress the reads contained in the SAM file
-Go to the folder simulations
-Run the following command
+1) Compress the reads contained in the SAM file:
 
-./main.run <samFile> <prefixOfOutput>
+$ $PATH_TO_BINARY/cbc -c <samFile> <outputFile> <ReferenceFile>
 
 The <samFile> is a SAM file ordered by position, that contains only the aligned reads, i.e., those reads that failed to align to the reference should not be included in the SAM file. We further assume the AUX field MD is present.
-The <prefixOfOutput> is the path/prefix that the compressed files will have. In this case the program will generate the following files:
-prefixOfOutput_F.ido
-prefixOfOutput_I.ido
-prefixOfOutput_M.ido
-prefixOfOutput_P.ido
-prefixOfOutput_P_A.ido
-prefixOfOutput_S.ido
-prefixOfOutput_char.ido
-prefixOfOutput_pos.ido
+The <outputFile> is the name of the compressed file will have.
+The <ReferenceFile> is the FASTA file used as reference for the creation of the SAM file.
 
-3) Decompress the reads
-Go to the folder simulations
-Run the following command
+3) Decompress the reads:
 
-./main.run <reconstructedReads> <fileWithPathToRefChromosomes> <prefixOfOutput>
+$ PATH_TO_BINARY/cbc -d <compressedFile> <outputFile> <ReferenceFile>
 
-The <reconstructedReads> is the file where the program is going to write the reconstructed reads.
-The <fileWithPathToRefChromosomes> is a file where line X contains the path to the chromosome X (see example below)
-The <prefixOutput> should be the same as the one specified in step 1) (for compression)
-
-#########################################
-		Example
-#########################################
-
-In the following example, we compress the SAM file SRR065390_1_bowtie2_c_elegans_ws235.mapped.example.sam, generated from the FASTQ file SRR065390_1.fastq with bowtie2 with c_elegans_ws235 as reference. For the purpose of the example, the sam file includes only around 3 million reads that mapped to the chromosome1. 
-
-We then decompress it and reconstruct the reads.
-
-1) Compress the sam file
-Go to the folder simulations
-Run the following command:
-
-./main.run ../SAMfiles/SRR065390_1_bowtie2_c_elegans_ws235.mapped.example.sam ../compressedFiles/test
-
-The command generates the files 
-../compressedFiles/test_F.ido
-../compressedFiles/test_I.ido
-../compressedFiles/test_M.ido
-../compressedFiles/test_P.ido
-../compressedFiles/test_P_A.ido
-../compressedFiles/test_S.ido
-../compressedFiles/test_char.ido
-../compressedFiles/test_pos.ido
-
-2) Decompress the reads
-Go to the folder simulations
-Run the following command:
-
-./main.run ../reconstructedReads/example.reads ceReference.txt ../compressedFiles/test
-
-The file ceReference.txt contains in the first line the path to the first chromosome. If there were more chromosomes, they should be specified one per line. In this case we are just using the first chromosome.
-The reconstructed reads will be generated in reconstructedReads/example.reads
-The compressedFiles/test is the prefix of the compressed files generated in step 1).
+The <outputFile> is the file where the program is going to write the reconstructed reads.
+The <compressedFile> is the file already compressed by cbc.
+The <ReferenceFile> is the FASTA file used as reference for the creation of the SAM file.
 
 #########################################
     Thanks for using our program!!               
