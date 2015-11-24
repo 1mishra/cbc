@@ -3,12 +3,10 @@
                                   
       Compressor for aligned reads 
        (described in a SAM file)              
-                                  
-#########################################
 
 #########################################
 		Contact               
-#########################################
+		
 Please contact the authors for any bug/comment:
 
 Idoia Ochoa:	iochoa@stanford.edu
@@ -16,7 +14,6 @@ Mikel Hernaez:	mhernaez@stanford.edu
 
 #########################################
 		Purpose
-#########################################
 
 This is a program for compression and decompression of aligned reads presented in a SAM file.
 Note that the purpose of this algorithm is to compress the necessary information to reconstruct the reads contained in the SAM file, i.e.,
@@ -32,21 +29,18 @@ Recall that the purpose of the proposed method is to compress the aligned reads 
 
 #########################################
 		Usage
-#########################################
 
 1) Compress the reads contained in the SAM file
 2) Reconstruct the reads using the output of the compressor and the reference used for the alignment (to generate the SAM file)
 
 #########################################
 		Download
-#########################################
 
 1) Download the software from github. (https://github.com/mikelhernaez/cbc) 
 2) Unzip it.
 
 #########################################
               Installation
-#########################################
 
 Go to the main folder and run the following command:
 
@@ -56,13 +50,12 @@ This will create a folder named "bin" where you will find the binary to run the 
 
 #########################################
 		Usage
-#########################################
 
 For an example on how to run the program and generate the necessary files, please see example below.
 
 1) Compress the reads contained in the SAM file:
 
-$ $PATH_TO_BINARY/cbc -c <samFile> <outputFile> <ReferenceFile>
+$ PATH_TO_BINARY/cbc -c <samFile> <outputFile> <ReferenceFile>
 
 The <samFile> is a SAM file ordered by position, that contains only the aligned reads, i.e., those reads that failed to align to the reference should not be included in the SAM file. We further assume the AUX field MD is present.
 The <outputFile> is the name of the compressed file will have.
