@@ -76,7 +76,7 @@ uint32_t alphabet_contains(const struct alphabet_t *alphabet, symbol_t symbol);
 uint32_t get_symbol_index(const struct alphabet_t *alphabet, symbol_t symbol);
 
 // Compute the union of two alphabets
-void alphabet_union(const struct alphabet_t *restrict a, const struct alphabet_t *restrict b, struct alphabet_t *result);
+void alphabet_union(const struct alphabet_t *__restrict__ a, const struct alphabet_t *__restrict__ b, struct alphabet_t *result);
 
 // Display routines
 void print_alphabet(const struct alphabet_t *);

@@ -269,7 +269,7 @@ struct quantizer_t *get_cond_quantizer(struct cond_quantizer_list_t *list, uint3
  * Stores the given quantizers at the appropriate index corresponding to the left context symbol given
  * for the specific column
  */
-void store_cond_quantizers(struct quantizer_t *restrict lo, struct quantizer_t *restrict hi, double ratio, struct cond_quantizer_list_t *list, uint32_t column, symbol_t prev) {
+void store_cond_quantizers(struct quantizer_t *__restrict__ lo, struct quantizer_t *__restrict__ hi, double ratio, struct cond_quantizer_list_t *list, uint32_t column, symbol_t prev) {
 	uint32_t idx = get_symbol_index(list->input_alphabets[column], prev);
 	store_cond_quantizers_indexed(lo, hi, ratio, list, column, idx);
 }
@@ -278,7 +278,7 @@ void store_cond_quantizers(struct quantizer_t *restrict lo, struct quantizer_t *
  * Stores the given quantizers directly at the given index based on the previous context symbol. Faster when
  * we know what the previous index was in addition to what the previous symbol was
  */
-void store_cond_quantizers_indexed(struct quantizer_t *restrict lo, struct quantizer_t *restrict hi, double ratio, struct cond_quantizer_list_t *list, uint32_t column, uint32_t idx) {
+void store_cond_quantizers_indexed(struct quantizer_t *__restrict__ lo, struct quantizer_t *__restrict__ hi, double ratio, struct cond_quantizer_list_t *list, uint32_t column, uint32_t idx) {
     list->q[column][2*idx] = lo;
 	list->q[column][2*idx + 1] = hi;
     list->ratio[column][idx] = ratio;

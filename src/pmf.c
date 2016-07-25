@@ -310,7 +310,7 @@ uint32_t get_symbol_index(const struct alphabet_t *alphabet, symbol_t symbol) {
  * Finds the unique set of symbols across both input alphabets and creates an
  * output alphabet
  */
-void alphabet_union(const struct alphabet_t *restrict a, const struct alphabet_t *restrict b, struct alphabet_t *result) {
+void alphabet_union(const struct alphabet_t *__restrict__ a, const struct alphabet_t *__restrict__ b, struct alphabet_t *result) {
 	symbol_t *sym = (symbol_t *) _alloca((a->size+b->size)*sizeof(symbol_t));
 	uint32_t i = 0;
 	uint32_t j = 0;

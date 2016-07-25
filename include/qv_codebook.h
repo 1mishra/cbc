@@ -83,8 +83,8 @@ void cond_quantizer_init_column(struct cond_quantizer_list_t *list, uint32_t col
 struct pmf_t *get_cond_pmf(struct cond_pmf_list_t *list, uint32_t column, symbol_t prev);
 struct quantizer_t *get_cond_quantizer_indexed(struct cond_quantizer_list_t *list, uint32_t column, uint32_t index);
 struct quantizer_t *get_cond_quantizer(struct cond_quantizer_list_t *list, uint32_t column, symbol_t prev);
-void store_cond_quantizers(struct quantizer_t *restrict lo, struct quantizer_t *restrict hi, double ratio, struct cond_quantizer_list_t *list, uint32_t column, symbol_t prev);
-void store_cond_quantizers_indexed(struct quantizer_t *restrict lo, struct quantizer_t *restrict hi, double ratio, struct cond_quantizer_list_t *list, uint32_t column, uint32_t index);
+void store_cond_quantizers(struct quantizer_t *__restrict__ lo, struct quantizer_t *__restrict__ hi, double ratio, struct cond_quantizer_list_t *list, uint32_t column, symbol_t prev);
+void store_cond_quantizers_indexed(struct quantizer_t *__restrict__ lo, struct quantizer_t *__restrict__ hi, double ratio, struct cond_quantizer_list_t *list, uint32_t column, uint32_t index);
 struct quantizer_t *choose_quantizer(struct cond_quantizer_list_t *list, struct well_state_t *well, uint32_t column, symbol_t prev, uint32_t *q_idx, uint8_t *type);
 uint32_t find_state_encoding(struct quantizer_t *codebook, symbol_t value);
 
