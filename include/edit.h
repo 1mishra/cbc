@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 typedef enum {INSERT, DELETE, REPLACE, MATCH} edit;
 

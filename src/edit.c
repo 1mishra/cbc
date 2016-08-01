@@ -64,7 +64,7 @@ uint32_t edit_dist(char *str1, char *str2, uint32_t s1, uint32_t s2) {
 static void compact_seq(struct operation *tmp_seq, uint32_t count, struct operation *seq) {
   uint32_t run = 0;
   edit edit_type = INSERT;
-  for (uint32_t i = count - 1; i >= 0; i--) {
+  for (int32_t i = count - 1; i >= 0; i--) {
     if (run != 0 && edit_type != tmp_seq[i].edit_op) {
       seq->edit_op = edit_type;
       seq->value = run;
@@ -87,6 +87,10 @@ static void compact_seq(struct operation *tmp_seq, uint32_t count, struct operat
         break;
     }
   }
+  if (run > 0) {
+    seq->edit_op = edit_type;
+    seq->value = run;
+  }
 }
 
 // sequence transforms str2 into str1
@@ -99,7 +103,7 @@ uint32_t edit_sequence(char *str1, char *str2, uint32_t s1, uint32_t s2, struct 
   }
   uint32_t dist = edit_dist_helper(str1, str2, s1, s2, matrix);
 
-  struct operation *seq_tmp = (struct operation *) malloc(max(s1,s2) * sizeof(struct operation));
+  struct operation *tmp_seq = (struct operation *) malloc(max(s1,s2) * sizeof(struct operation));
 
   uint32_t i = s1;
   uint32_t j = s2;
@@ -115,23 +119,23 @@ uint32_t edit_sequence(char *str1, char *str2, uint32_t s1, uint32_t s2, struct 
     switch (index) {
       case 0: {
                 if (str1[i-1] != str2[j-1]) {
-                  seq_tmp->value = str1[i-1];
-                  seq_tmp->edit_op = REPLACE;
+                  tmp_seq[count].value = str1[i-1];
+                  tmp_seq[count].edit_op = REPLACE;
                 } else { 
-                  seq_tmp->edit_op = MATCH;
+                  tmp_seq[count].edit_op = MATCH;
                 }
                 i--;
                 j--;
                 break;
               } 
       case 1: {
-                seq_tmp->edit_op = DELETE;
+                tmp_seq[count].edit_op = DELETE;
                 j--;
                 break;
               }
       case 2: {
-                seq_tmp->edit_op = INSERT;
-                seq_tmp->value = str1[i-1];
+                tmp_seq[count].edit_op = INSERT;
+                tmp_seq[count].value = str1[i-1];
                 i--;
                 break;
               }
@@ -142,5 +146,8 @@ uint32_t edit_sequence(char *str1, char *str2, uint32_t s1, uint32_t s2, struct 
     free(matrix[i]);
   }
   free(matrix);
+
+  compact_seq(tmp_seq, count, seq);
+  free(tmp_seq);
   return dist;
 }
