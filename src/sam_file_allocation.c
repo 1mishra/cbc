@@ -551,7 +551,6 @@ uint32_t load_sam_line(sam_block sb){
 
     rline->read_length = sb->read_length;
     qvline->columns = sb->read_length;
-    
     // Read compulsory fields
     if (fgets(buffer, 1024, sb->fs)) {
         // ID

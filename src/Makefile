@@ -7,8 +7,8 @@ OBJ=$(SRC:.c=.o)
 CC=gcc
 RM=rm -f
 
-CFLAGS=-ffast-math -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -Wall -I../include -I/usr/local/include  -D__APPLE__
-LDFLAGS=-L/usr/local/lib -lc -lm -lpthread -L../../libssh/build/src -lssh
+CFLAGS=-ffast-math -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -Wall -I../include -I/usr/local/include -I../libssh/build/src  -D__APPLE__
+LDFLAGS=-L/usr/local/lib -lc -lm -lpthread -L../libssh/build/src -lssh
 
 %.o : %.c
 	$(CC) -gdwarf-2 -g $(CFLAGS) -c $< #he add -gdwarf-2 -g para poder debugear bien en XCode http://stackoverflow.com/questions/21132194/is-it-possible-to-debug-a-gcc-compiled-program-using-lldb-or-debug-a-clang-comp
