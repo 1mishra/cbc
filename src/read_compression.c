@@ -9,11 +9,12 @@
 
 #include "read_compression.h"
 
+
+
 /************************
  * Compress the read
  **********************/
 uint32_t compress_read(Arithmetic_stream as, read_models models, read_line samLine, uint8_t chr_change){
-    
     int tempF, PosDiff, chrPos, k;
     uint32_t mask;
     uint16_t maskedReadVal;

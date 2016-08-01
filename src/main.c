@@ -11,9 +11,11 @@
 
 #include <stdio.h>
 #include <time.h>
+#include <inttypes.h>
 #include "sam_block.h"
 #include "Arithmetic_stream.h"
 #include "read_compression.h"
+#include "edit.h"
 
 #include <pthread.h>
 
@@ -44,6 +46,28 @@ void usage(const char *name) {
 
 
 int main(int argc, const char * argv[]) {
+
+    struct operation seq[100];
+    uint32_t dist = edit_sequence("hello", "world", 5, 5, seq); 
+    printf("%" PRIu32 "\n", dist);
+    for (uint32_t i = 0; i < dist; i++) {
+      /*
+      switch (seq[i].edit_op) {
+        case REPLACE:
+          printf("replace %c\n", seq[i].ch);
+          break;
+        case MATCH:
+          printf("match\n");
+          break;
+        case DELETE:
+          printf("delete\n");
+          break;
+        case INSERT:
+          printf("insert %c\n", seq[i].ch);
+          break;
+      }*/
+    }
+    exit(1);
     
     uint32_t mode, i = 0, file_idx = 0, rc = 0, lossiness = LOSSLESS;
     

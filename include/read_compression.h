@@ -11,6 +11,7 @@
 
 #include "Arithmetic_stream.h"
 #include "sam_block.h"
+#include <inttypes.h>
 
 
 #define MAX_BP_CHR 300000000
@@ -28,9 +29,6 @@ char *reference;
 uint8_t snpInRef[MAX_BP_CHR];
 uint32_t cumsumP;
 
-
-// edit distance
-uint32_t edit_dist(char *str1, char *str2, uint32_t s1, uint32_t s2);
 
 // Protorypes for the compression functions
 uint32_t compress_flag(Arithmetic_stream a, stream_model *F, uint16_t flag);
