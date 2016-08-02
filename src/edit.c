@@ -98,12 +98,23 @@ void reconstruct_read_from_ops(struct operation *ops, uint32_t ops_len, char *re
 static uint32_t compact_seq(struct operation *tmp_seq, uint32_t count, struct operation *seq) {
   uint32_t run = 0;
 
+  uint32_t length = 0;
   uint32_t total_structs = 0;
+
+  uint32_t num_dels = 0;
+  uint32_t num_ins = 0;
+
   edit edit_type = DELETE;
   for (int32_t i = count - 1; i >= 0; i--) {
     if (run != 0 && edit_type != tmp_seq[i].edit_op) {
       seq->edit_op = edit_type;
       seq->value = run;
+      
+      if (edit_type == MATCH) {
+        length += seq->value;
+      } else {
+        num_dels += seq->value;
+      }
       run = 0;
       seq++;
       total_structs++;
@@ -113,13 +124,19 @@ static uint32_t compact_seq(struct operation *tmp_seq, uint32_t count, struct op
         run++;
         edit_type = MATCH;
         break;
-      case REPLACE: case INSERT:
-        seq->edit_op = tmp_seq[i].edit_op;
+      case REPLACE: 
+        seq->edit_op = REPLACE;
         seq->value = tmp_seq[i].value;
-        //if (seq->edit_op == REPLACE) {
-        //  assert((char) seq->value != str2[length]);
-        //}
         total_structs++;
+        length++;
+        seq++;
+        break;
+      case INSERT:
+        seq->edit_op = INSERT;
+        num_ins++;
+        seq->value = tmp_seq[i].value;
+        total_structs++;
+        length++;
         seq++;
         break;
       case DELETE:
@@ -131,6 +148,8 @@ static uint32_t compact_seq(struct operation *tmp_seq, uint32_t count, struct op
   if (run > 0) {
     seq->edit_op = edit_type;
     seq->value = run;
+    if (edit_type == MATCH) length += seq->value;
+    else num_dels += seq->value;
     total_structs++;
   }
   return total_structs;
@@ -155,7 +174,6 @@ uint32_t edit_sequence(char *str1, char *str2, uint32_t s1, uint32_t s2, struct 
 
 
   while (i != 0 || j != 0) {
-    count++;
     uint32_t edits[EDITS];      
     edits[0] = (i > 0 && j > 0) ? matrix[i-1][j-1] : UINT32_MAX;    // REPLACE
     edits[1] = (j > 0) ? matrix[i][j-1] : UINT32_MAX;               // DELETE
@@ -186,6 +204,7 @@ uint32_t edit_sequence(char *str1, char *str2, uint32_t s1, uint32_t s2, struct 
                 break;
               }
     }
+    count++;
   }
   if (count > 1024) {
     // fail fast until refactoring 
