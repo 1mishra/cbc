@@ -1,18 +1,5 @@
 import sys
-def dist(s1, s2):
-    if len(s1) > len(s2):
-        s1, s2 = s2, s1
-
-    distances = range(len(s1) + 1)
-    for i2, c2 in enumerate(s2):
-        distances_ = [i2+1]
-        for i1, c1 in enumerate(s1):
-            if c1 == c2:
-                distances_.append(distances[i1])
-            else:
-                distances_.append(1 + min((distances[i1], distances[i1 + 1], distances_[-1])))
-        distances = distances_
-    return distances[-1]
+import Levenshtein
 
 def process_sam(filename):
   f = open(filename)
@@ -36,9 +23,12 @@ def compare(sam, uncompressed):
   reads = process_uncompressed(uncompressed)
   assert(len(sam_reads) == len(reads))
   for x, y in zip(sam_reads, reads):
-    value = dist(x, y)
-    if value != 0:
+    assert(len(x) == len(y))
+    value = Levenshtein.editops(x, y)
+    dist = Levenshtein.distance(x, y)
+    if dist != 0:
       print value
+      print dist
       print x
       print y
 

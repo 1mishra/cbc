@@ -1,0 +1,2 @@
+#!/bin/bash
+gdb --args bin/program -x compressed uncompressed ../dna/ce.fa

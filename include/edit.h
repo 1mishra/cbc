@@ -15,7 +15,7 @@ struct operation {
   int value;
 };
 
-static uint32_t edit_dist_helper(char *str1, char *str2, uint32_t s1, uint32_t s2, uint32_t **matrix);
+static uint32_t edit_dist_helper(char *str1, char *str2, uint32_t s1, uint32_t s2, uint32_t matrix[s1+1][s2+1]);
 uint32_t edit_dist(char *str1, char *str2, uint32_t s1, uint32_t s2);
 
 void reconstruct_read_from_ops(struct operation *ops, uint32_t ops_len, char *ref, char *target);

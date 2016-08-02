@@ -13,6 +13,8 @@
     __typeof__ (b) _b = (b); \
     _a > _b ? _a : _b; })
 
+#define DEBUG true
+
 static uint32_t const EDITS = 3;
 
 uint32_t min_index(uint32_t *array, uint32_t size) {
@@ -27,7 +29,7 @@ uint32_t min_index(uint32_t *array, uint32_t size) {
   return index;
 }
 
-static uint32_t edit_dist_helper(char *str1, char *str2, uint32_t s1, uint32_t s2, uint32_t **matrix) {
+static uint32_t edit_dist_helper(char *str1, char *str2, uint32_t s1, uint32_t s2, uint32_t matrix[s1+1][s2+1]) {
   for (uint32_t i = 0; i <= s1; i++) {
     for (uint32_t j = 0; j <= s2; j++) {
       if (i == 0) {
@@ -50,48 +52,39 @@ static uint32_t edit_dist_helper(char *str1, char *str2, uint32_t s1, uint32_t s
 
 uint32_t edit_dist(char *str1, char *str2, uint32_t s1, uint32_t s2) {
 
-  uint32_t **matrix = (uint32_t **) malloc((s1 + 1) * sizeof(uint32_t*));
-  for (uint32_t i = 0; i <= s1; i++) {
-    matrix[i] = (uint32_t *) malloc((s2+1) * sizeof(uint32_t));
-  }
+  uint32_t matrix[s1+1][s2+1];
   uint32_t dist = edit_dist_helper(str1, str2, s1, s2, matrix);
-
-  for (uint32_t i = 0; i <= s1; i++) {
-    free(matrix[i]);
-  }
-  free(matrix);
   return dist;
 }
 
 void reconstruct_read_from_ops(struct operation *ops, uint32_t ops_len, char *ref, char *target) {
-  uint32_t i = 0, j = 0, count = 0;
-  while (count < ops_len) {
-    switch (ops[count].edit_op) {
+  uint32_t ref_ctr = 0, target_ctr = 0;
+  for (uint32_t i = 0; i < ops_len; i++) {
+    switch (ops[i].edit_op) {
       case MATCH: {
-        for (int k = 0; k < ops[count].value; k++) {
-          target[i] = ref[j];
-          i++;
-          j++;
+        for (int k = 0; k < ops[i].value; k++) {
+          target[target_ctr] = ref[ref_ctr];
+          target_ctr++;
+          ref_ctr++;
         }
         break;
                   }
       case REPLACE: {
-        target[i] = (char) ops[count].value;
-        i++;
-        j++;
+        target[target_ctr] = (char) ops[i].value;
+        target_ctr++;
+        ref_ctr++;
         break;
                     }
       case DELETE: {
-        j += ops[count].value;
+        ref_ctr += ops[i].value;
         break;
                    }
       case INSERT:
-        target[i] = (char) ops[count].value;
-        i++;
+        target[target_ctr] = (char) ops[i].value;
+        target_ctr++;
         break;
 
     }
-    count++;
   }
 }
 
@@ -111,9 +104,11 @@ static uint32_t compact_seq(struct operation *tmp_seq, uint32_t count, struct op
       seq->value = run;
       
       if (edit_type == MATCH) {
+        if (DEBUG) printf("MATCH %d\n", (int) seq->value);
         length += seq->value;
       } else {
         num_dels += seq->value;
+        if (DEBUG) printf("DELETE %d\n", (int) seq->value);
       }
       run = 0;
       seq++;
@@ -127,14 +122,21 @@ static uint32_t compact_seq(struct operation *tmp_seq, uint32_t count, struct op
       case REPLACE: 
         seq->edit_op = REPLACE;
         seq->value = tmp_seq[i].value;
+        if (DEBUG) {
+          printf("REPLACE %c\n", (char) tmp_seq[i].value);
+        }
         total_structs++;
         length++;
         seq++;
         break;
       case INSERT:
         seq->edit_op = INSERT;
-        num_ins++;
         seq->value = tmp_seq[i].value;
+        if (DEBUG) {
+          printf("INSERT %c\n", (char) tmp_seq[i].value);
+        }
+        num_ins++;
+
         total_structs++;
         length++;
         seq++;
@@ -148,8 +150,13 @@ static uint32_t compact_seq(struct operation *tmp_seq, uint32_t count, struct op
   if (run > 0) {
     seq->edit_op = edit_type;
     seq->value = run;
-    if (edit_type == MATCH) length += seq->value;
-    else num_dels += seq->value;
+    if (edit_type == MATCH) {
+      length += seq->value;
+      if (DEBUG) printf("MATCH %d\n", (int) seq->value);
+    } else {
+      num_dels += seq->value;
+      if (DEBUG) printf("DELETE %d\n", (int) seq->value);
+    }
     total_structs++;
   }
   return total_structs;
@@ -159,10 +166,8 @@ static uint32_t compact_seq(struct operation *tmp_seq, uint32_t count, struct op
 // callee allocates a large enough array (>= sizeof(operation) * max(s1, 22)) 
 // returns number of operations used 
 uint32_t edit_sequence(char *str1, char *str2, uint32_t s1, uint32_t s2, struct operation *seq) {
-  uint32_t **matrix = (uint32_t **) malloc((s1 + 1) * sizeof(uint32_t*));
-  for (uint32_t i = 0; i <= s1; i++) {
-    matrix[i] = (uint32_t *) malloc((s2+1) * sizeof(uint32_t));
-  }
+  uint32_t matrix[s1+1][s2+1];
+
   uint32_t dist = edit_dist_helper(str1, str2, s1, s2, matrix);
 
   // change this later to be more robust
@@ -211,11 +216,11 @@ uint32_t edit_sequence(char *str1, char *str2, uint32_t s1, uint32_t s2, struct 
     assert(count <= 1024);
   }
 
-  for (uint32_t i = 0; i <= s1; i++) {
-    free(matrix[i]);
-  }
-  free(matrix);
-
   uint32_t ops_len = compact_seq(tmp_seq, count, seq);
+  char buf[1024];
+  reconstruct_read_from_ops(seq, ops_len, str2, buf);
+  printf("Ori: %.100s\nRef: %.100s\nAtt: %.100s\n", str2, str1, buf);
+  printf("Computed dist: %d\n", (int) dist);
+  exit(1);
   return dist;
 }
