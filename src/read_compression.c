@@ -341,26 +341,28 @@ uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char 
     
     // Store the positions and Chars in the corresponding vector
     prev_pos = 0;
+    
     for (i = 0; i < numDels; i++){
-      printf("Del: %d\n", (int) Dels[i]);
+        printf("Del: %d\n", (int) Dels[i]);
         compress_var(as, rs->var, Dels[i], prev_pos, flag);
         prev_pos += Dels[i];
     }
     prev_pos = 0;
     for (i = 0; i < numSnps; i++){
-        printf("%d, %d\n", SNPs[i].pos, prev_pos);
+        printf("Pos: %d, Prev Pos: %d\n", SNPs[i].pos, prev_pos);
         compress_var(as, rs->var, SNPs[i].pos, prev_pos, flag); 
         compress_chars(as, rs->chars, SNPs[i].refChar, SNPs[i].targetChar);
-        printf("%d\n", SNPs[i].targetChar);
+        printf("Target: %d, Ref: %d\n", SNPs[i].targetChar, SNPs[i].refChar);
         prev_pos += SNPs[i].pos;
     }
+    /*
     prev_pos = 0;
     for (i = 0; i < numIns; i++){
         compress_var(as, rs->var, Insers[i].pos, prev_pos, flag);
         prev_pos += Insers[i].pos;
         
         compress_chars(as, rs->chars, O, Insers[i].targetChar);
-    }
+    }*/
     
     
 
