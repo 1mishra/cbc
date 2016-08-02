@@ -262,18 +262,15 @@ uint32_t compress_chars(Arithmetic_stream a, stream_model *c, enum BASEPAIR ref,
  ******************************************/
 uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char *read, uint32_t P, uint32_t deltaP, uint8_t flag){
     
-    unsigned int numIns = 0, numDels = 0, numSnps = 0, lastSnp = 1;
-    int i = 0, tmpi = 0, M = 0, I = 0, D = 0, pos = 0, ctr = 0, prevPosI = 0, prevPosD = 0, ctrS = 0, S = 0;
-    uint32_t delta = 0;
+    unsigned int numIns = 0, numDels = 0, numSnps = 0;
+    unsigned int prevPosI = 0, prevPosD = 0, prevPosSNP = 0;
+    int i = 0;
 
-    struct operation operations[MAX_READ_LENGTH];
-    uint32_t dist = edit_sequence(&(reference[P - 1]), read, rs->read_length, rs->read_length, operations);
+    struct operation ops[MAX_READ_LENGTH];
+    struct operation *operations = ops;
+    edit_sequence(&(reference[P - 1]), read, rs->read_length, rs->read_length, operations);
 
-    
     //uint32_t k, tempValue, tempSum = 0;
-    
-    uint32_t posRef, posRead, tmpM, tmpI, tmpD, tmpS, match;
-    char *tmpEdits;
     
     
     // pos in the reference
@@ -283,7 +280,6 @@ uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char 
     ins Insers[MAX_READ_LENGTH];
     snp SNPs[MAX_READ_LENGTH];
     
-    uint8_t firstCase = 1;
     
     uint32_t prev_pos = 0;
     
@@ -298,13 +294,43 @@ uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char 
     
     compress_match(as, rs->match, 0, deltaP);
     
+    // Why is this here?
     if (strcmp("0A0T0A0A0A96", edits)==0) {
         ;
     }
     
-    if (lastSnp != 0)
-        add_snps_to_array(edits, SNPs, &numSnps, rs->read_length + 1, read);
-    
+    uint32_t cur_pos = 0;
+    while (cur_pos < rs->read_length) {
+      switch (operations->edit_op) {
+        case MATCH:
+          cur_pos += operations->value;
+          break;
+        case REPLACE:
+          SNPs[numSnps].pos = cur_pos - prevPosSNP;
+          SNPs[numSnps].refChar = char2basepair((char) operations->value);
+          SNPs[numSnps].targetChar = char2basepair(read[cur_pos]);
+          prevPosSNP = cur_pos;
+          cur_pos += 1;
+          numSnps++;
+          break;
+        case INSERT:
+          Insers[numIns].pos = cur_pos - prevPosI;
+          Insers[numIns].targetChar = char2basepair(read[cur_pos]);
+          prevPosI = cur_pos;
+          cur_pos += 1;
+          numIns++;
+          break;
+        case DELETE:
+          for (uint32_t k = 0; k < operations->value; k++) {
+            Dels[numDels] = cur_pos - prevPosD;
+            prevPosD = cur_pos;
+            numDels++;
+          }
+          cur_pos += operations->value;
+          break;
+      }
+      operations++;
+    }
     
     // Compress the edits
     if ((numDels | numIns) == 0) {
@@ -325,16 +351,9 @@ uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char 
     }
     prev_pos = 0;
     for (i = 0; i < numSnps; i++){
-        
-        // compute delta to next snp
-        delta = compute_delta_to_first_snp(prev_pos, rs->read_length);
-        delta = (delta << BITS_DELTA);
-        compress_var(as, rs->var, SNPs[i].pos, delta + prev_pos, flag);
-        prev_pos += SNPs[i].pos + 1;
-        snpInRef[cumsumP + prev_pos - 1 - 1] = 1;
-        
+        compress_var(as, rs->var, SNPs[i].pos, prev_pos, flag); 
         compress_chars(as, rs->chars, SNPs[i].refChar, SNPs[i].targetChar);
-        
+        prev_pos += SNPs[i].pos;
     }
     prev_pos = 0;
     for (i = 0; i < numIns; i++){
@@ -348,101 +367,6 @@ uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char 
 
     return cumsumP;
     
-}
-
-
-
-/******************************************
- * Function to look for snps in the cigar
- ****************************************/
-int add_snps_to_array(char* edits, snp* SNPs, unsigned int *numSnps, unsigned int insertionPos, char *read){
-    
-    static unsigned int prevEditPtr = 0, cumPos = 0;
-    
-    int pos = 0, tempPos = 0, ctr;
-    char ch = 0;
-    
-    uint8_t flag = 0;
-    
-    edits += prevEditPtr;
-    
-    while (*edits != 0 ) {
-        
-        pos = atoi(edits);
-        
-        tempPos = pos;
-        
-        ctr = compute_num_digits(pos);
-        ch = *(edits+ctr);
-        ctr++;
-        
-        // if there are deletions after pos, we need to add those positions that come after the deletions
-        while (ch == '^'){
-            while (isdigit(*(edits+ctr)) == 0) {
-                ctr++;
-            }
-            tempPos += atoi(edits + ctr);
-            
-            ctr += compute_num_digits(atoi(edits + ctr));
-            
-            ch = *(edits+ctr);
-            ctr++;
-            if (ch == '\0'){
-                flag = 1;
-                break;
-            }
-        }
-        
-        if (flag == 1){
-            break;
-        }
-        
-        
-        if (cumPos + tempPos >= insertionPos){
-            cumPos++;
-            return cumPos;
-        }
-        
-        tempPos = atoi(edits);
-        edits += compute_num_digits(tempPos);
-        prevEditPtr += compute_num_digits(tempPos);
-        
-        //if ( isnumber(*(edits+1)) ) edits += 2, prevEditPtr += 2;
-        //else edits += 1, prevEditPtr += 1;
-        
-        ch = *edits++, prevEditPtr++;
-        
-        while (ch == '^'){
-            while (isdigit(*edits) == 0)
-                edits++, prevEditPtr++;
-            pos += atoi(edits);
-            
-            tempPos = atoi(edits);
-            edits += compute_num_digits(tempPos);
-            prevEditPtr += compute_num_digits(tempPos);
-            
-            //if ( isnumber(*(edits+1)) ) edits += 2, prevEditPtr += 2;
-            //else edits += 1, prevEditPtr += 1;
-            ch = *edits++, prevEditPtr++;
-        }
-        
-        if (ch == '\0')
-            break;
-        
-        cumPos += pos;
-        
-        SNPs[*numSnps].pos = pos;
-        SNPs[*numSnps].refChar = char2basepair(ch);
-        SNPs[*numSnps].targetChar = char2basepair(read[cumPos]);
-        (*numSnps)++;
-        cumPos++;
-        if (*edits == 0)
-            break;
-    }
-    
-    prevEditPtr = 0;
-    cumPos = 0;
-    return 0;
 }
 
 uint32_t compute_delta_to_first_snp(uint32_t prevPos, uint32_t readLen){
@@ -461,30 +385,3 @@ uint32_t compute_delta_to_first_snp(uint32_t prevPos, uint32_t readLen){
     
     return deltaOut;
 }
-
-uint32_t compute_num_digits(uint32_t x){
-    
-    //Get the number of digits (We assume readLength < 1000)
-    
-    if (x < 10)
-        return 1;
-    else if (x < 100)
-        return 2;
-    else if (x < 1000)
-        return 3;
-    else if (x < 10000)
-        return 4;
-    else if (x < 100000)
-        return 5;
-    else if (x < 1000000)
-        return 6;
-    else if (x < 10000000)
-        return 7;
-    else if (x < 100000000)
-        return 8;
-    else
-        return 9;
-    
-}
-
-

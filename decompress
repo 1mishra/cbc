@@ -1,0 +1,2 @@
+#!/bin/bash
+./bin/program -x compressed uncompressed ../dna/ce.fa 

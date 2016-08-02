@@ -442,18 +442,12 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
     for (i = 0; i < numSnps; i++){
         
         assert(currentPos < models->read_length);
+        snpPos = decompress_var(as, models->var, prev_pos, invFlag);
+        currentPos = snpPos + prev_pos;
         
-        // compute delta to next snp
-        delta = compute_delta_to_first_snp(prev_pos, models->read_length);
-        delta = (delta << BITS_DELTA);
-        
-        snpPos = decompress_var(as, models->var, delta + prev_pos, invFlag);
-        prev_pos += snpPos + 1;
-        snpInRef[cumsumP + prev_pos - 1 - 1] = 1;
-        
-        refbp = char2basepair( tempRead[currentPos + snpPos] );
-        tempRead[currentPos + snpPos] = decompress_chars(as, models->chars, refbp);
-        currentPos = currentPos + snpPos + 1;
+        refbp = char2basepair( tempRead[currentPos] );
+        tempRead[currentPos] = decompress_chars(as, models->chars, refbp);
+        prev_pos = currentPos;
         
     }
     currentPos = 0;
