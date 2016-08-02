@@ -294,11 +294,6 @@ uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char 
     
     compress_match(as, rs->match, 0, deltaP);
     
-    // Why is this here?
-    if (strcmp("0A0T0A0A0A96", edits)==0) {
-        ;
-    }
-    
     uint32_t cur_pos = 0;
     while (cur_pos < rs->read_length) {
       switch (operations->edit_op) {
@@ -309,6 +304,7 @@ uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char 
           SNPs[numSnps].pos = cur_pos - prevPosSNP;
           SNPs[numSnps].refChar = char2basepair((char) operations->value);
           SNPs[numSnps].targetChar = char2basepair(read[cur_pos]);
+          assert((char) operations->value != read[cur_pos]);
           prevPosSNP = cur_pos;
           cur_pos += 1;
           numSnps++;
@@ -346,13 +342,16 @@ uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char 
     // Store the positions and Chars in the corresponding vector
     prev_pos = 0;
     for (i = 0; i < numDels; i++){
+      printf("Del: %d\n", (int) Dels[i]);
         compress_var(as, rs->var, Dels[i], prev_pos, flag);
         prev_pos += Dels[i];
     }
     prev_pos = 0;
     for (i = 0; i < numSnps; i++){
+        printf("%d, %d\n", SNPs[i].pos, prev_pos);
         compress_var(as, rs->var, SNPs[i].pos, prev_pos, flag); 
         compress_chars(as, rs->chars, SNPs[i].refChar, SNPs[i].targetChar);
+        printf("%d\n", SNPs[i].targetChar);
         prev_pos += SNPs[i].pos;
     }
     prev_pos = 0;
@@ -369,19 +368,3 @@ uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char 
     
 }
 
-uint32_t compute_delta_to_first_snp(uint32_t prevPos, uint32_t readLen){
-    
-    uint32_t deltaOut;
-    uint32_t j = 0;
-    
-    deltaOut = readLen + 2;
-    
-    for (j=0;j<readLen - prevPos; j++){
-        if (snpInRef[cumsumP - 1 + j + prevPos] == 1){
-            deltaOut = j;
-            break;
-        }
-    }
-    
-    return deltaOut;
-}

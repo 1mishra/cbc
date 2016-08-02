@@ -418,6 +418,7 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
     for (ctrDels = 0; ctrDels < numDels; ctrDels++){
         
         delPos = decompress_var(as, models->var, prev_pos, invFlag);
+        printf("Del: %d\n", (int) delPos);
         prev_pos += delPos;
         
         Dels[ctrDels] = delPos;
@@ -443,10 +444,12 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
         
         assert(currentPos < models->read_length);
         snpPos = decompress_var(as, models->var, prev_pos, invFlag);
-        currentPos = snpPos + prev_pos;
+        printf("%d, %d\n", snpPos, prev_pos);
+        currentPos = snpPos + prev_pos + 1;
         
         refbp = char2basepair( tempRead[currentPos] );
         tempRead[currentPos] = decompress_chars(as, models->chars, refbp);
+        printf("%d\n", tempRead);
         prev_pos = currentPos;
         
     }

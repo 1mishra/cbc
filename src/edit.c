@@ -1,5 +1,7 @@
 
 #include "edit.h"
+#include <assert.h>
+#include <ctype.h>
 
 #define min(a,b) \
  ({ __typeof__ (a) _a = (a); \
@@ -25,7 +27,7 @@ uint32_t min_index(uint32_t *array, uint32_t size) {
   return index;
 }
 
-uint32_t edit_dist_helper(char *str1, char *str2, uint32_t s1, uint32_t s2, uint32_t **matrix) {
+static uint32_t edit_dist_helper(char *str1, char *str2, uint32_t s1, uint32_t s2, uint32_t **matrix) {
   for (uint32_t i = 0; i <= s1; i++) {
     for (uint32_t j = 0; j <= s2; j++) {
       if (i == 0) {
@@ -63,11 +65,13 @@ uint32_t edit_dist(char *str1, char *str2, uint32_t s1, uint32_t s2) {
 
 static void compact_seq(struct operation *tmp_seq, uint32_t count, struct operation *seq) {
   uint32_t run = 0;
-  edit edit_type = INSERT;
+  uint32_t total = 0;
+  edit edit_type = DELETE;
   for (int32_t i = count - 1; i >= 0; i--) {
     if (run != 0 && edit_type != tmp_seq[i].edit_op) {
       seq->edit_op = edit_type;
       seq->value = run;
+      total += run;
       run = 0;
       seq++;
     }
@@ -79,6 +83,7 @@ static void compact_seq(struct operation *tmp_seq, uint32_t count, struct operat
       case REPLACE: case INSERT:
         seq->edit_op = tmp_seq[i].edit_op;
         seq->value = tmp_seq[i].value;
+        total++;
         seq++;
         break;
       case DELETE:
@@ -90,7 +95,9 @@ static void compact_seq(struct operation *tmp_seq, uint32_t count, struct operat
   if (run > 0) {
     seq->edit_op = edit_type;
     seq->value = run;
+    total += run;
   }
+  assert(total == count);
 }
 
 // sequence transforms str2 into str1
@@ -103,7 +110,8 @@ uint32_t edit_sequence(char *str1, char *str2, uint32_t s1, uint32_t s2, struct 
   }
   uint32_t dist = edit_dist_helper(str1, str2, s1, s2, matrix);
 
-  struct operation *tmp_seq = (struct operation *) malloc(max(s1,s2) * sizeof(struct operation));
+  // change this later to be more robust
+  struct operation tmp_seq[1024];
 
   uint32_t i = s1;
   uint32_t j = s2;
@@ -111,6 +119,7 @@ uint32_t edit_sequence(char *str1, char *str2, uint32_t s1, uint32_t s2, struct 
 
 
   while (i != 0 || j != 0) {
+    count++;
     uint32_t edits[EDITS];      
     edits[0] = (i > 0 && j > 0) ? matrix[i-1][j-1] : UINT32_MAX;    // REPLACE
     edits[1] = (j > 0) ? matrix[i][j-1] : UINT32_MAX;               // DELETE
@@ -120,6 +129,7 @@ uint32_t edit_sequence(char *str1, char *str2, uint32_t s1, uint32_t s2, struct 
       case 0: {
                 if (str1[i-1] != str2[j-1]) {
                   tmp_seq[count].value = str1[i-1];
+                  assert(isalpha(str1[i-1]));
                   tmp_seq[count].edit_op = REPLACE;
                 } else { 
                   tmp_seq[count].edit_op = MATCH;
@@ -136,18 +146,22 @@ uint32_t edit_sequence(char *str1, char *str2, uint32_t s1, uint32_t s2, struct 
       case 2: {
                 tmp_seq[count].edit_op = INSERT;
                 tmp_seq[count].value = str1[i-1];
+                assert(isalpha(str1[i-1]));
                 i--;
                 break;
               }
     }
-    count++;
   }
+  if (count > 1024) {
+    // fail fast until refactoring 
+    assert(count <= 1024);
+  }
+
   for (uint32_t i = 0; i <= s1; i++) {
     free(matrix[i]);
   }
   free(matrix);
 
   compact_seq(tmp_seq, count, seq);
-  free(tmp_seq);
   return dist;
 }
