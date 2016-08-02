@@ -34,7 +34,7 @@ uint32_t compress_read(Arithmetic_stream as, read_models models, read_line samLi
     PosDiff = compress_pos(as, models->pos, models->pos_alpha, samLine->pos, chr_change);
     tempF = compress_flag(as, models->flag, samLine->invFlag);
     //tempF = compress_flag(as, models->flag, 0);
-    chrPos = compress_edits(as, models, samLine->edits, samLine->cigar, samLine->read, PosDiff, tempF, &(samLine->cigarFlags));
+    chrPos = compress_edits(as, models, samLine->edits, samLine->read, samLine->pos, PosDiff, tempF);
     
     assert(samLine->pos  == chrPos);
 
@@ -260,19 +260,20 @@ uint32_t compress_chars(Arithmetic_stream a, stream_model *c, enum BASEPAIR ref,
 /*****************************************
  * Compress the edits
  ******************************************/
-uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char *cigar, char *read, uint32_t deltaP, uint8_t flag, uint8_t* cigarFlags){
+uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char *read, uint32_t P, uint32_t deltaP, uint8_t flag){
     
     unsigned int numIns = 0, numDels = 0, numSnps = 0, lastSnp = 1;
     int i = 0, tmpi = 0, M = 0, I = 0, D = 0, pos = 0, ctr = 0, prevPosI = 0, prevPosD = 0, ctrS = 0, S = 0;
     uint32_t delta = 0;
-    char recCigar[MAX_CIGAR_LENGTH];
+
+    struct operation operations[MAX_READ_LENGTH];
+    uint32_t dist = edit_sequence(&(reference[P - 1]), read, rs->read_length, rs->read_length, operations);
 
     
     //uint32_t k, tempValue, tempSum = 0;
     
     uint32_t posRef, posRead, tmpM, tmpI, tmpD, tmpS, match;
-    char *tmpcigar, *tmpEdits;
-    char *origCigar = cigar;
+    char *tmpEdits;
     
     
     // pos in the reference

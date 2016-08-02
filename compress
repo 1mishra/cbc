@@ -1,0 +1,2 @@
+#!/bin/bash
+./bin/program ../dna/ce_part.sam compressed ../dna/ce.fa 

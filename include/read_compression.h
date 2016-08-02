@@ -12,6 +12,7 @@
 #include "Arithmetic_stream.h"
 #include "sam_block.h"
 #include <inttypes.h>
+#include "edit.h"
 
 
 #define MAX_BP_CHR 300000000
@@ -49,7 +50,7 @@ double QVs_decompress_lossless(Arithmetic_stream as, qv_block info, uint8_t inv,
 uint32_t decompress_qv(Arithmetic_stream a, stream_model *model, uint32_t idx);
 
 // Prototypes for the functions to extract the information from the reads
-uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char *cigar, char *read, uint32_t P, uint8_t flag, uint8_t* cigarFlags);
+uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char *read, uint32_t P, uint32_t deltaP, uint8_t flag);
 int add_snps_to_array(char* edits, snp* SNPs, unsigned int *numSnps, unsigned int insertionPos, char *read);
 uint32_t compute_delta_to_first_snp(uint32_t prevPos, uint32_t readLen);
 
