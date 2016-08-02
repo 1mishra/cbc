@@ -14,7 +14,32 @@ def dist(s1, s2):
         distances = distances_
     return distances[-1]
 
-x = "GCCTCACCCTAAGCCTAAGCCTAAGCCTAAGCCTAAGCCTAAGCCTAAGCCTAAGCCTAAGCCTAAGCCTAAGCCTAAGCCTAAGCCTAAGCCTAAGCCT"
-y = "GCCTCAGGCTAAGCCTAAGCCTAAGCCTAAGCCTAAGCCTAAGCCTAAGCCTAAGCCTAAGCCTAAGCCTAAGCCTAAGCCTAAGCCTAAGCCTAAGCCT"
+def process_sam(filename):
+  f = open(filename)
+  reads = []
+  for line in f:
+    if line[0] == '@':
+      continue
+    reads.append(line.split()[9].strip())
+  f.close()
+  return reads
 
-print dist(x,sys.argv[1])
+def process_uncompressed(filename):
+  f = open(filename)
+  reads = []
+  for line in f:
+    reads.append(line.strip())
+  return reads
+
+def compare(sam, uncompressed):
+  sam_reads = process_sam(sam)
+  reads = process_uncompressed(uncompressed)
+  assert(len(sam_reads) == len(reads))
+  for x, y in zip(sam_reads, reads):
+    value = dist(x, y)
+    if value != 0:
+      print value
+      print x
+      print y
+
+compare(sys.argv[1], sys.argv[2])
