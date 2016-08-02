@@ -327,14 +327,6 @@ uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char 
         
         // compute delta to next snp
         delta = compute_delta_to_first_snp(prev_pos, rs->read_length);
-        /*delta = READ_LENGTH + 2;
-         for (j=0;j<READ_LENGTH - prev_pos; j++){
-         if (snpInRef[cumsumP - 1 + j] == 1){
-         delta = j;
-         break;
-         }
-         }*/
-        
         delta = (delta << BITS_DELTA);
         compress_var(as, rs->var, SNPs[i].pos, delta + prev_pos, flag);
         prev_pos += SNPs[i].pos + 1;

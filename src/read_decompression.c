@@ -7,7 +7,7 @@
 //
 
 #include "read_compression.h"
-
+#include <ctype.h>
 
 //**************************************************************//
 //                                                              //
@@ -33,8 +33,11 @@ int store_reference_in_memory(FILE* refFile){
             endoffile = 0;
             break;
         }
-        
-        while (reference[letterCount++] != '\n' ) ;
+       
+        reference[letterCount] = toupper(reference[letterCount]);
+        while (reference[letterCount++] != '\n' ) { 
+          reference[letterCount] = toupper(reference[letterCount]);
+        }
         letterCount--;
         
     }
