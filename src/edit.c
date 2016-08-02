@@ -217,11 +217,5 @@ uint32_t edit_sequence(char *str1, char *str2, uint32_t s1, uint32_t s2, struct 
   free(matrix);
 
   uint32_t ops_len = compact_seq(tmp_seq, count, seq);
-  char rec[101];
-  rec[100] = '\0';
-  reconstruct_read_from_ops(seq, ops_len, str1, rec);
-  printf("%.100s\n%s\n", str1, rec);
-  assert(edit_dist(str1, rec, s1, s1) == 0);
-  exit(1);
   return dist;
 }

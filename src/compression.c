@@ -104,7 +104,6 @@ int decompress_line(Arithmetic_stream as, sam_block samBlock, uint8_t lossiness)
     
     print_line(&sline, 0, samBlock->fs);
     
-    return 0;
     return 1;
 }
 
@@ -194,7 +193,6 @@ void* decompress(void *thread_info){
     // Decompress the blocks
     while(decompress_line(as, samBlock, info->lossiness)){
         //reset_QV_block(samBlock->QVs, DECOMPRESSION);
-        printf("Decompress line\n");
         n++;
     }
     

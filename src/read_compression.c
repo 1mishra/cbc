@@ -342,16 +342,13 @@ uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char 
     prev_pos = 0;
     
     for (i = 0; i < numDels; i++){
-        printf("Del: %d\n", (int) Dels[i]);
         compress_var(as, rs->var, Dels[i], prev_pos, flag);
         prev_pos += Dels[i];
     }
     prev_pos = 0;
     for (i = 0; i < numSnps; i++){
-        printf("Pos: %d, Prev Pos: %d\n", SNPs[i].pos, prev_pos);
         compress_var(as, rs->var, SNPs[i].pos, prev_pos, flag); 
         compress_chars(as, rs->chars, SNPs[i].refChar, SNPs[i].targetChar);
-        printf("Target: %c, Ref: %d\n", basepair2char(SNPs[i].targetChar), SNPs[i].refChar);
         prev_pos += SNPs[i].pos;
     }
     /*
