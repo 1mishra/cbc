@@ -414,6 +414,7 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
     // Reconstruct the read
     
     // Deletions
+    printf("nDels: %d\n", (int) numDels);
     prev_pos = 0;
     for (ctrDels = 0; ctrDels < numDels; ctrDels++){
         
@@ -443,9 +444,11 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
         
         assert(currentPos < models->read_length);
         snpPos = decompress_var(as, models->var, prev_pos, invFlag);
+        printf("Pos: %d, Prev Pos: %d\n", snpPos, prev_pos);
         currentPos = snpPos + prev_pos;
         refbp = char2basepair( reference[pos + currentPos - 1] );
         tempRead[currentPos] = decompress_chars(as, models->chars, refbp);
+        printf("Target: %c, Ref: %d\n", tempRead[currentPos], refbp);
         prev_pos = currentPos;
         
     }
@@ -455,6 +458,7 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
     switch (invFlag) {
             // There is NO inversion
         case 0:
+            printf("NO INVERSION\n");
             // Write the insertions
             prev_pos = 0;
             for (i = 0; i < numIns; i++){
@@ -485,6 +489,7 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
             
             // There is an inversion
         case 1:
+            printf("INVERSION\n");
             prevIns = 0;
             prev_pos = 0;
             for (i = 0; i < numIns; i++){
@@ -518,6 +523,5 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
             break;
     }
     
-  
     return returnVal;
 }

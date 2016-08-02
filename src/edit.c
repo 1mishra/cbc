@@ -63,17 +63,50 @@ uint32_t edit_dist(char *str1, char *str2, uint32_t s1, uint32_t s2) {
   return dist;
 }
 
-static void compact_seq(struct operation *tmp_seq, uint32_t count, struct operation *seq) {
+void reconstruct_read_from_ops(struct operation *ops, uint32_t ops_len, char *ref, char *target) {
+  uint32_t i = 0, j = 0, count = 0;
+  while (count < ops_len) {
+    switch (ops[count].edit_op) {
+      case MATCH: {
+        for (int k = 0; k < ops[count].value; k++) {
+          target[i] = ref[j];
+          i++;
+          j++;
+        }
+        break;
+                  }
+      case REPLACE: {
+        target[i] = (char) ops[count].value;
+        i++;
+        j++;
+        break;
+                    }
+      case DELETE: {
+        j += ops[count].value;
+        break;
+                   }
+      case INSERT:
+        target[i] = (char) ops[count].value;
+        i++;
+        break;
+
+    }
+    count++;
+  }
+}
+
+static uint32_t compact_seq(struct operation *tmp_seq, uint32_t count, struct operation *seq) {
   uint32_t run = 0;
-  uint32_t total = 0;
+
+  uint32_t total_structs = 0;
   edit edit_type = DELETE;
   for (int32_t i = count - 1; i >= 0; i--) {
     if (run != 0 && edit_type != tmp_seq[i].edit_op) {
       seq->edit_op = edit_type;
       seq->value = run;
-      total += run;
       run = 0;
       seq++;
+      total_structs++;
     }
     switch (tmp_seq[i].edit_op) {
       case MATCH:
@@ -83,7 +116,10 @@ static void compact_seq(struct operation *tmp_seq, uint32_t count, struct operat
       case REPLACE: case INSERT:
         seq->edit_op = tmp_seq[i].edit_op;
         seq->value = tmp_seq[i].value;
-        total++;
+        //if (seq->edit_op == REPLACE) {
+        //  assert((char) seq->value != str2[length]);
+        //}
+        total_structs++;
         seq++;
         break;
       case DELETE:
@@ -95,9 +131,9 @@ static void compact_seq(struct operation *tmp_seq, uint32_t count, struct operat
   if (run > 0) {
     seq->edit_op = edit_type;
     seq->value = run;
-    total += run;
+    total_structs++;
   }
-  assert(total == count);
+  return total_structs;
 }
 
 // sequence transforms str2 into str1
@@ -129,7 +165,6 @@ uint32_t edit_sequence(char *str1, char *str2, uint32_t s1, uint32_t s2, struct 
       case 0: {
                 if (str1[i-1] != str2[j-1]) {
                   tmp_seq[count].value = str1[i-1];
-                  assert(isalpha(str1[i-1]));
                   tmp_seq[count].edit_op = REPLACE;
                 } else { 
                   tmp_seq[count].edit_op = MATCH;
@@ -162,6 +197,12 @@ uint32_t edit_sequence(char *str1, char *str2, uint32_t s1, uint32_t s2, struct 
   }
   free(matrix);
 
-  compact_seq(tmp_seq, count, seq);
+  uint32_t ops_len = compact_seq(tmp_seq, count, seq);
+  char rec[101];
+  rec[100] = '\0';
+  reconstruct_read_from_ops(seq, ops_len, str1, rec);
+  printf("%.100s\n%s\n", str1, rec);
+  assert(edit_dist(str1, rec, s1, s1) == 0);
+  exit(1);
   return dist;
 }

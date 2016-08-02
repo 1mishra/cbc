@@ -304,7 +304,7 @@ uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char 
           SNPs[numSnps].pos = cur_pos - prevPosSNP;
           SNPs[numSnps].refChar = char2basepair((char) operations->value);
           SNPs[numSnps].targetChar = char2basepair(read[cur_pos]);
-          assert((char) operations->value != read[cur_pos]);
+          assert(SNPs[numSnps].refChar != SNPs[numSnps].targetChar);
           prevPosSNP = cur_pos;
           cur_pos += 1;
           numSnps++;
@@ -322,7 +322,6 @@ uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char 
             prevPosD = cur_pos;
             numDels++;
           }
-          cur_pos += operations->value;
           break;
       }
       operations++;
@@ -352,7 +351,7 @@ uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char 
         printf("Pos: %d, Prev Pos: %d\n", SNPs[i].pos, prev_pos);
         compress_var(as, rs->var, SNPs[i].pos, prev_pos, flag); 
         compress_chars(as, rs->chars, SNPs[i].refChar, SNPs[i].targetChar);
-        printf("Target: %d, Ref: %d\n", SNPs[i].targetChar, SNPs[i].refChar);
+        printf("Target: %c, Ref: %d\n", basepair2char(SNPs[i].targetChar), SNPs[i].refChar);
         prev_pos += SNPs[i].pos;
     }
     /*
