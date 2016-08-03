@@ -10,7 +10,7 @@
 #include <ctype.h>
 #include <stdint.h>
 
-#define DEBUG false
+#define DEBUG true
 //**************************************************************//
 //                                                              //
 //                  STORE REFERENCE IN MEMORY                   //
@@ -347,6 +347,7 @@ uint32_t argmin(uint32_t *arr, uint32_t len) {
   return index;
 }
 
+
 /*****************************************
  * Reconstruct the read
  ******************************************/
@@ -438,15 +439,37 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
 
     // SNPS
     prev_pos = 0;
+    uint32_t ins_ctr = 0;
+    uint32_t dels_ctr = 0;
     uint32_t ref_pos = 0;
     for (i = 0; i < numSnps; i++){
         
-        assert(prev_pos <  models->read_length);
+        assert(prev_pos <= models->read_length);
         snpPos = decompress_var(as, models->var, prev_pos, invFlag);
 
+        ref_pos += snpPos; 
         // Get adjusted ref_pos
-        ref_pos = snpPos + prev_pos; 
+        while (true) {
+          uint32_t buf[2];
+          buf[0] = (ins_ctr < numIns) ? Insers[ins_ctr].pos : UINT32_MAX;
+          buf[1] = (dels_ctr < numDels) ? Dels[dels_ctr] : UINT32_MAX;
+          int index = argmin(buf, 2);
+          if (index == 0) {
+            if (buf[0] >= prev_pos + snpPos) break;
+            else {
+              (ref_pos)--;
+              (ins_ctr)++;
+            }
+          } else {
+            if (buf[1] > ref_pos) break;
+            else {
+              (ref_pos)++;
+              (dels_ctr)++;
+            }
+          }
+        }
 
+        /*
         int j = 0; // inserts
         int k = 0; // deletsions
         uint32_t buf[2];
@@ -465,7 +488,7 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
               k++;
             } else break;
           }
-        }
+        }*/
 
         refbp = char2basepair( reference[pos + ref_pos - 1] );
         SNPs[i].refChar = refbp;
