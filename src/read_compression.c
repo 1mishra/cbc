@@ -304,7 +304,7 @@ uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char 
         compress_indels(as, rs->indels, numIns);
     }
 
-    printf("snps %d, dels %d, ins %d\n", numSnps, numDels, numIns);
+    //printf("snps %d, dels %d, ins %d\n", numSnps, numDels, numIns);
     
     // Store the positions and Chars in the corresponding vector
     prev_pos = 0;

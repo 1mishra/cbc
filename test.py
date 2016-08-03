@@ -22,12 +22,12 @@ def compare(sam, uncompressed):
   sam_reads = process_sam(sam)
   reads = process_uncompressed(uncompressed)
   assert(len(sam_reads) == len(reads))
-  for x, y in zip(sam_reads, reads):
+  for i, (x, y) in enumerate(zip(sam_reads, reads)):
     assert(len(x) == len(y))
     value = Levenshtein.editops(x, y)
     dist = Levenshtein.distance(x, y)
     if dist != 0:
-      print value
+      print "Example: " + str(i)
       print dist
       print "Ref: " + x
       print "Att: " + y

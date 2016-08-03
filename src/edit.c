@@ -86,6 +86,7 @@ void reconstruct_read_from_ops(struct sequence *seq, char *ref, char *target, ui
 
   uint32_t ins_pos = 0, snps_pos = 0, dels_pos = 0;
   uint32_t numIns = seq->n_ins, numSnps = seq->n_snps, numDels = seq->n_dels;
+  //printf("snps %d, dels %d, ins %d\n", numSnps, numDels, numIns);
   struct ins *Insers = seq->Insers;
   struct snp *SNPs = seq->SNPs;
   uint32_t *Dels = seq->Dels;
@@ -194,12 +195,18 @@ uint32_t edit_sequence(char *str1, char *str2, uint32_t s1, uint32_t s2, struct 
   }
   for (uint32_t i = 0; i < n_snps_tmp; i++) {
     seq->SNPs[i] = SNPs_tmp[n_snps_tmp - i - 1];  
+    /*
+    printf("Pos %d\n", seq->SNPs[i].pos);
+    printf("refChar %c\n", basepair2char(seq->SNPs[i].refChar));
+    printf("targetChar %c\n", basepair2char(seq->SNPs[i].targetChar));
+    printf("\n");*/
   }
 
   if (DEBUG) {
     char buf[1024];
     reconstruct_read_from_ops(seq, str2, buf, s2);
     printf("Ori: %.100s\nRef: %.100s\nAtt: %.100s\n", str2, str1, buf);
+    printf("Distance between the reconstructed and ref: %d\n", edit_dist(str1, buf, s1, s1));
     printf("Computed dist: %d\n", (int) dist);
   }
 

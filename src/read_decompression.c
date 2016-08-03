@@ -415,10 +415,13 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
             numSnps = decompress_indels(as, models->indels);
             numDels = decompress_indels(as, models->indels);
             numIns = decompress_indels(as, models->indels);
+        } else {
+            numDels = 0;
+            numIns = 0;
         }
     }
     
-    printf("snps %d, dels %d, ins %d\n", numSnps, numDels, numIns);
+    //printf("snps %d, dels %d, ins %d\n", numSnps, numDels, numIns);
 
     // Reconstruct the read
     
@@ -436,19 +439,10 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
         delPos = decompress_var(as, models->var, prev_pos, invFlag);
         Dels[ctrDels] = delPos + prev_pos;
         prev_pos = Dels[ctrDels];
-        // Do not take the deleted characters from the reference
-        for (ctrPos = 0; ctrPos<delPos; ctrPos++){
-            tempRead[currentPos] = reference[pos + currentPos - 1 + ctrDels];
-            currentPos++;
-        }
+        //printf("Delete ref at %d\n", prev_pos);
   
     }
     
-    // Fill up the rest of the read up to numIns
-    for (ctrPos = currentPos; ctrPos<models->read_length - numIns; ctrPos++){
-        tempRead[currentPos] = reference[pos + currentPos - 1 + numDels];
-        currentPos++;
-    }
 
     currentPos = 0;
     
@@ -470,6 +464,7 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
         snpPos = decompress_var(as, models->var, prev_pos, invFlag);
 
         // Get adjusted ref_pos
+        // TODO FIX THIS. it's buggy
         ref_pos = snpPos + prev_pos; 
         for (int i = 0; i < numDels; i++) {
           if (Dels[i] <= ref_pos) ref_pos++;
@@ -483,10 +478,17 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
         SNPs[i].targetChar = char2basepair(decompress_chars(as, models->chars, refbp));
         SNPs[i].pos = prev_pos + snpPos;
 
-        printf("Replace %c with %c, Reference: %d, targetPos: %d\n", basepair2char(refbp), basepair2char(SNPs[i].targetChar), ref_pos, snpPos + prev_pos);
+        //printf("Replace %c with %c, Reference: %d, targetPos: %d\n", basepair2char(refbp), basepair2char(SNPs[i].targetChar), ref_pos, snpPos + prev_pos);
         prev_pos += snpPos;
 
     }
+    /*
+    for (uint32_t i = 0; i < numSnps; i++) {
+      printf("Pos %d\n", seq.SNPs[i].pos);
+      printf("refChar %c\n", basepair2char(seq.SNPs[i].refChar));
+      printf("targetChar %c\n", basepair2char(seq.SNPs[i].targetChar));
+      printf("\n");
+    }*/
     reconstruct_read_from_ops(&seq, &(reference[pos - 1]), read, models->read_length);
     return returnVal;
 }
