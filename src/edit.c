@@ -70,15 +70,15 @@ static void fill_target(char *ref, char *target, int prev_pos, int cur_pos, uint
   if (prev_pos == cur_pos) {
     return;
   }
-  // this is buggy
   for (int i = prev_pos; i < cur_pos; i++) {
+    target[i] = ref[*ref_pos];
+    (*ref_pos)++;
     while (*dels_pos < numDels && *ref_pos >= Dels[*dels_pos]) {
       if (DEBUG) printf("DELETE %d\n", Dels[*dels_pos]);
       (*ref_pos)++; 
       (*dels_pos)++;
     }
-    target[i] = ref[*ref_pos];
-    (*ref_pos)++;
+
   }
   if (DEBUG) printf("MATCH [%d, %d), ref [%d, %d)\n", prev_pos, cur_pos, ref_start, *ref_pos);
 }
@@ -120,6 +120,8 @@ void reconstruct_read_from_ops(struct sequence *seq, char *ref, char *target, ui
     }
   }
   fill_target(ref, target, start_copy, len, &ref_pos, Dels, &dels_pos, numDels);
+  assert(snps_pos == numSnps);
+  assert(dels_pos == ins_pos);
 }
 
 // sequence transforms str2 into str1

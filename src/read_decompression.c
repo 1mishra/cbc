@@ -347,6 +347,34 @@ uint32_t argmin(uint32_t *arr, uint32_t len) {
   return index;
 }
 
+static void fill_target(char *ref, char *target, uint32_t prev_pos, uint32_t cur_pos, uint32_t *ref_pos, uint32_t *Dels, uint32_t *dels_pos, uint32_t numDels) {
+
+  uint32_t ref_start = *ref_pos;
+  if (prev_pos == cur_pos) {
+    return;
+  }
+  for (int i = prev_pos; i < cur_pos; i++) {
+    target[i] = ref[*ref_pos];
+    (*ref_pos)++;
+    while (*dels_pos < numDels && *ref_pos >= Dels[*dels_pos]) {
+      if (DEBUG) printf("DELETE %d\n", Dels[*dels_pos]);
+      (*ref_pos)++;
+      (*dels_pos)++;
+    }
+  }
+  if (DEBUG) printf("MATCH [%d, %d), ref [%d, %d)\n", prev_pos, cur_pos, ref_start, *ref_pos);
+}
+
+static void handle_insertions(char *ref, char *target, uint32_t *start_copy, int cur_pos, uint32_t *ref_pos, struct ins *Insers, uint32_t *ins_pos, uint32_t numIns, uint32_t *Dels, uint32_t *dels_pos, uint32_t numDels) {
+  while (*ins_pos < numIns && Insers[*ins_pos].pos < cur_pos) {
+    fill_target(ref, target, *start_copy, Insers[*ins_pos].pos, ref_pos, Dels, dels_pos, numDels);
+    if (DEBUG) printf("Insert %c at %d\n", basepair2char(Insers[*ins_pos].targetChar), Insers[*ins_pos].pos);
+    target[Insers[*ins_pos].pos] = Insers[*ins_pos].targetChar;
+    *start_copy = Insers[*ins_pos].pos + 1;
+    (*ins_pos)++;
+  }
+
+}
 
 /*****************************************
  * Reconstruct the read
@@ -410,21 +438,26 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
 
     // Reconstruct the read
     
+    /*
     struct sequence seq;
     init_sequence(&seq, Dels, Insers, SNPs);
     seq.n_ins = numIns;
     seq.n_snps = numSnps;
-    seq.n_dels = numDels;
+    seq.n_dels = numDels;*/
+    
+
 
     char *tempRead = (char*)alloca(models->read_length*sizeof(char) + 2);
     // Deletions
     prev_pos = 0;
     for (ctrDels = 0; ctrDels < numDels; ctrDels++){
         delPos = decompress_var(as, models->var, prev_pos, invFlag);
-        if (DEBUG) printf("Delete ref at %d\n", delPos + prev_pos);
+        //if (DEBUG) printf("Delete ref at %d\n", delPos + prev_pos);
         Dels[ctrDels] = delPos + prev_pos;
+        printf("Delete: %d\n", Dels[ctrDels]);
         prev_pos += delPos;
     }
+
 
     currentPos = 0;
     
@@ -433,87 +466,57 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
         insPos = decompress_var(as, models->var, prev_pos, invFlag);
         Insers[i].pos = prev_pos + insPos;
         Insers[i].targetChar = char2basepair(decompress_chars(as, models->chars, O));
-        if (DEBUG) printf("Insert %c at %d\n", basepair2char(Insers[i].targetChar), insPos + prev_pos);
+        //if (DEBUG) printf("Insert %c at offset: %d, prev_pos %d\n", basepair2char(Insers[i].targetChar), insPos, prev_pos);
         prev_pos += insPos;
     }
 
+    assert(numDels == numIns);
+
+    uint32_t ins_pos = 0, dels_pos = 0;
+    uint32_t start_copy = 0, ref_pos = 0;
+
+    for (int i = 0; i < models->read_length; i++) {
+      read[i] = 'Z';
+    }
+    if (numDels > 0 && Dels[dels_pos] == 0) {
+      if (DEBUG) printf("DELETE %d\n", Dels[dels_pos]);
+      (ref_pos)++; 
+      (dels_pos)++;
+    }
+
     // SNPS
+
     prev_pos = 0;
     uint32_t ins_ctr = 0;
     uint32_t dels_ctr = 0;
-    uint32_t ref_pos = 0;
-    for (i = 0; i < numSnps; i++){
+    for (i = 0; i < numSnps; i++) {
         
         assert(prev_pos <= models->read_length);
         snpPos = decompress_var(as, models->var, prev_pos, invFlag);
+        SNPs[i].pos = prev_pos + snpPos;
 
-        ref_pos += snpPos; 
-        // Get adjusted ref_pos
-        while (true) {
-          uint32_t buf[2];
-          buf[0] = (ins_ctr < numIns) ? Insers[ins_ctr].pos : UINT32_MAX;
-          buf[1] = (dels_ctr < numDels) ? Dels[dels_ctr] : UINT32_MAX;
-          int index = argmin(buf, 2);
-          if (index == 0) {
-            if (buf[0] >= prev_pos + snpPos) break;
-            else {
-              (ref_pos)--;
-              (ins_ctr)++;
-            }
-          } else {
-            if (buf[1] > ref_pos) break;
-            else {
-              (ref_pos)++;
-              (dels_ctr)++;
-            }
-          }
-        }
-
-        /*
-        int j = 0; // inserts
-        int k = 0; // deletsions
-        uint32_t buf[2];
-        while (true) {
-          buf[0] = (j < numIns) ? Insers[j].pos : UINT32_MAX;
-          buf[1] = (k < numDels) ? Dels[k] : UINT32_MAX;
-          int index = argmin(buf, 2); 
-          if (index == 0) {
-            if (snpPos + prev_pos >= buf[0]) {
-              ref_pos--; 
-              j++;
-            } else break;
-          } else {
-            if (ref_pos >= buf[1]) {
-              ref_pos++;
-              k++;
-            } else break;
-          }
-        }*/
+        handle_insertions(&(reference[pos-1]), read, &start_copy, SNPs[i].pos, &ref_pos, Insers, &ins_pos, numIns, Dels, &dels_pos, numDels);
+        fill_target(&(reference[pos - 1]), read, start_copy, SNPs[i].pos, &ref_pos, Dels, &dels_pos, numDels);
+        start_copy = SNPs[i].pos + 1;
 
         refbp = char2basepair( reference[pos + ref_pos - 1] );
         SNPs[i].refChar = refbp;
         SNPs[i].targetChar = char2basepair(decompress_chars(as, models->chars, refbp));
-        SNPs[i].pos = prev_pos + snpPos;
-
-        if (DEBUG) printf("Replace %c with %c, Reference: %d, Target: %d\n", basepair2char(refbp), basepair2char(SNPs[i].targetChar), ref_pos, snpPos + prev_pos);
+        read[SNPs[i].pos] = basepair2char(SNPs[i].targetChar);
+        if (DEBUG) printf("Replace %c with %c at %d\n", basepair2char(SNPs[i].refChar), basepair2char(SNPs[i].targetChar), SNPs[i].pos);
+        ref_pos++;
         prev_pos += snpPos;
 
-    }
-    reconstruct_read_from_ops(&seq, &(reference[pos - 1]), read, models->read_length);
 
-    if (invFlag != 1 && invFlag != 0) {
-      printf("ERROR: invFLAG different from 0 and 1\n");
-      return 2;
-    } 
-    /*
-    if (invFlag == 1) {
-      char tmp;
-      for (int i = 0; i < models->read_length / 2; i++) {
-        int k = models->read_length - i - 1;
-        tmp = read[k];
-        read[k] = bp_complement(read[i]);
-        read[i] = bp_complement(tmp);
-      }
-    }*/
+    }
+    handle_insertions(&(reference[pos-1]), read, &start_copy, models->read_length, &ref_pos, Insers, &ins_pos, numIns, Dels, &dels_pos, numDels);
+
+    //reconstruct_read_from_ops(&seq, &(reference[pos - 1]), read, models->read_length);
+
+    fill_target(&(reference[pos - 1]), read, start_copy, models->read_length, &ref_pos, Dels, &dels_pos, numDels);
+    assert(ins_pos == dels_pos);
+    if (invFlag == 0) returnVal = 0;
+    else if (invFlag == 1) returnVal = 1;
+    else returnVal = 2;
     return returnVal;
 }

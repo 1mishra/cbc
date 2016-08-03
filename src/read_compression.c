@@ -316,6 +316,7 @@ uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char 
         if (DEBUG) printf("Delete at offset %d, prev %d \n", Dels[i], prev_pos);
         prev_pos += Dels[i];
     }
+
     prev_pos = 0;
     for (i = 0; i < numIns; i++){
         Insers[i].pos = Insers[i].pos - prev_pos;

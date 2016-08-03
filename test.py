@@ -48,6 +48,7 @@ def compare(sam, uncompressed):
     if dist != 0:
       print "Example: " + str(i)
       print dist
+      print value
       print "Ref: " + x
       print "Att: " + y
 
