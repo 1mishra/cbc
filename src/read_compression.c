@@ -310,7 +310,10 @@ uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char 
     prev_pos = 0;
     
     for (i = 0; i < numDels; i++){
-        compress_var(as, rs->var, Dels[i] - prev_pos, prev_pos, flag);
+        assert(prev_pos < rs->read_length);
+        Dels[i] = Dels[i] - prev_pos;
+        compress_var(as, rs->var, Dels[i], prev_pos, flag);
+        //printf("Delete at pos %d, prev %d \n", Dels[i], prev_pos);
         prev_pos += Dels[i];
     }
     prev_pos = 0;
@@ -318,8 +321,8 @@ uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char 
         Insers[i].pos = Insers[i].pos - prev_pos;
         compress_var(as, rs->var, Insers[i].pos, prev_pos, flag);
         compress_chars(as, rs->chars, O, Insers[i].targetChar);
-        //printf("Insert %c at pos %d\n", basepair2char(Insers[i].targetChar), Insers[i].pos + prev_pos);
-        prev_pos = Insers[i].pos;
+        //printf("Insert %c at offset %d, prev_pos %d\n", basepair2char(Insers[i].targetChar), Insers[i].pos, prev_pos);
+        prev_pos += Insers[i].pos;
     }
 
     prev_pos = 0;
@@ -327,7 +330,7 @@ uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char 
         SNPs[i].pos = SNPs[i].pos - prev_pos;
         compress_var(as, rs->var, SNPs[i].pos, prev_pos, flag); 
         compress_chars(as, rs->chars, SNPs[i].refChar, SNPs[i].targetChar);
-        //printf("Replace %d with %d offset %d, prev_pos = %d\n", SNPs[i].refChar, SNPs[i].targetChar, SNPs[i].pos, prev_pos);
+        //printf("Replace %c with %c offset %d, prev_pos = %d\n", basepair2char(SNPs[i].refChar), basepair2char(SNPs[i].targetChar), SNPs[i].pos, prev_pos);
         prev_pos += SNPs[i].pos;
     }
     return cumsumP;

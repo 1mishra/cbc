@@ -385,27 +385,11 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
     cumsumP = pos;
     
     // If there is a match, reconstruct the read
-    if (match){
-        
-        switch (invFlag) {
-            case 0:
-                for (ctrPos=0; ctrPos<models->read_length; ctrPos++)
-                    read[readCtr++] = reference[pos + ctrPos - 1];
-                break;
-                
-            case 1:
-                for (ctrPos=0; ctrPos<models->read_length; ctrPos++)
-                    read[readCtr++] = bp_complement( reference[pos + models->read_length - 1 - ctrPos - 1] );
-                
-                break;
-            default:
-                printf("ERROR: invFlag must be 0 or 1\n");
-                
-        }
-        
+    if (match) {
+      for (ctrPos=0; ctrPos<models->read_length; ctrPos++)
+        read[readCtr++] = reference[pos + ctrPos - 1];
         return 1;
     }
-    
     // There is no match, retreive the edits
     else{
         numSnps = decompress_snps(as, models->snps);
@@ -435,14 +419,11 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
     // Deletions
     prev_pos = 0;
     for (ctrDels = 0; ctrDels < numDels; ctrDels++){
-        
         delPos = decompress_var(as, models->var, prev_pos, invFlag);
+        //printf("Delete ref at %d, prev %d\n", delPos, prev_pos);
         Dels[ctrDels] = delPos + prev_pos;
-        prev_pos = Dels[ctrDels];
-        //printf("Delete ref at %d\n", prev_pos);
-  
+        prev_pos += delPos;
     }
-    
 
     currentPos = 0;
     
@@ -451,8 +432,8 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
         insPos = decompress_var(as, models->var, prev_pos, invFlag);
         Insers[i].pos = prev_pos + insPos;
         Insers[i].targetChar = char2basepair(decompress_chars(as, models->chars, O));
-        //printf("Insert %c at pos %d\n", basepair2char(Insers[i].targetChar), Insers[i].pos);
-        prev_pos = Insers[i].pos;
+        //printf("Insert %c at offset %d, prev_pos %d\n", basepair2char(Insers[i].targetChar), insPos, prev_pos);
+        prev_pos += insPos;
     }
 
     // SNPS
@@ -466,29 +447,41 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
         // Get adjusted ref_pos
         // TODO FIX THIS. it's buggy
         ref_pos = snpPos + prev_pos; 
+
+        int add = 0;
         for (int i = 0; i < numDels; i++) {
-          if (Dels[i] <= ref_pos) ref_pos++;
+          if (Dels[i] <= ref_pos) add++;
         }
+        int sub = 0;
         for (int i = numIns - 1; i >= 0; i--) {
-          if (Insers[i].pos <= ref_pos) ref_pos--;
+          if (Insers[i].pos <= ref_pos) sub++;
         }
+        ref_pos = ref_pos + add - sub;
 
         refbp = char2basepair( reference[pos + ref_pos - 1] );
         SNPs[i].refChar = refbp;
         SNPs[i].targetChar = char2basepair(decompress_chars(as, models->chars, refbp));
         SNPs[i].pos = prev_pos + snpPos;
 
-        //printf("Replace %c with %c, Reference: %d, targetPos: %d\n", basepair2char(refbp), basepair2char(SNPs[i].targetChar), ref_pos, snpPos + prev_pos);
+        //printf("Replace %c with %c, Reference: %d, offset: %d, prev_pos = %d\n", basepair2char(refbp), basepair2char(SNPs[i].targetChar), ref_pos, snpPos, prev_pos);
         prev_pos += snpPos;
 
     }
-    /*
-    for (uint32_t i = 0; i < numSnps; i++) {
-      printf("Pos %d\n", seq.SNPs[i].pos);
-      printf("refChar %c\n", basepair2char(seq.SNPs[i].refChar));
-      printf("targetChar %c\n", basepair2char(seq.SNPs[i].targetChar));
-      printf("\n");
-    }*/
     reconstruct_read_from_ops(&seq, &(reference[pos - 1]), read, models->read_length);
+
+    if (invFlag != 1 && invFlag != 0) {
+      printf("ERROR: invFLAG different from 0 and 1\n");
+      return 2;
+    } 
+    /*
+    if (invFlag == 1) {
+      char tmp;
+      for (int i = 0; i < models->read_length / 2; i++) {
+        int k = models->read_length - i - 1;
+        tmp = read[k];
+        read[k] = bp_complement(read[i]);
+        read[i] = bp_complement(tmp);
+      }
+    }*/
     return returnVal;
 }
