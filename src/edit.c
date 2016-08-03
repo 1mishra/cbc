@@ -14,7 +14,7 @@
    _a > _b ? _a : _b; })
 
 #define DEBUG false
-#define VERIFY true
+#define VERIFY false
 
 static uint32_t const EDITS = 3;
 
@@ -81,6 +81,7 @@ static void fill_target(char *ref, char *target, int prev_pos, int cur_pos, uint
     }
 
   }
+  assert(*dels_pos <= numDels);
   if (DEBUG) printf("MATCH [%d, %d), ref [%d, %d)\n", prev_pos, cur_pos, ref_start, *ref_pos);
 }
 
@@ -96,7 +97,7 @@ void reconstruct_read_from_ops(struct sequence *seq, char *ref, char *target, ui
 
   uint32_t buf[2];
 
-  while (numDels > 0 && ref_pos == Dels[dels_pos]) {
+  while (numDels > 0 && dels_pos < numDels && ref_pos >= Dels[dels_pos]) {
     if (DEBUG) printf("DELETE %d\n", Dels[dels_pos]);
     ref_pos++;
     dels_pos++;
