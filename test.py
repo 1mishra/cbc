@@ -29,7 +29,7 @@ def compare(sam, uncompressed):
     if dist != 0:
       print value
       print dist
-      print x
-      print y
+      print "Ref: " + x
+      print "Att: " + y
 
 compare(sys.argv[1], sys.argv[2])

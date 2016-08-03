@@ -8,7 +8,9 @@
 
 #include "read_compression.h"
 #include <ctype.h>
+#include <stdint.h>
 
+#define DEBUG true
 //**************************************************************//
 //                                                              //
 //                  STORE REFERENCE IN MEMORY                   //
@@ -333,6 +335,18 @@ uint8_t decompress_chars(Arithmetic_stream a, stream_model *c, enum BASEPAIR ref
     
 }
 
+uint32_t argmin(uint32_t *arr, uint32_t len) {
+  uint32_t min = UINT32_MAX;
+  uint32_t index = 0;
+  for (uint32_t i = 0; i < len; i++) {
+    if (min > arr[i]) {
+      min = arr[i]; 
+      index = i;
+    }
+  }
+  return index;
+}
+
 /*****************************************
  * Reconstruct the read
  ******************************************/
@@ -343,6 +357,7 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
     
     uint32_t Dels[MAX_READ_LENGTH];
     ins Insers[MAX_READ_LENGTH];
+    snp SNPs[MAX_READ_LENGTH];
     
     static uint32_t prevPos = 0;
     
@@ -411,6 +426,8 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
         }
     }
     
+    printf("snps %d, dels %d, ins %d\n", numSnps, numDels, numIns);
+
     // Reconstruct the read
     
     // Deletions
@@ -420,7 +437,7 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
         delPos = decompress_var(as, models->var, prev_pos, invFlag);
         prev_pos += delPos;
         
-        Dels[ctrDels] = delPos;
+        Dels[ctrDels] = prev_pos;
         
         // Do not take the deleted characters from the reference
         for (ctrPos = 0; ctrPos<delPos; ctrPos++){
@@ -445,76 +462,55 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
         currentPos = snpPos + prev_pos;
         refbp = char2basepair( reference[pos + currentPos - 1] );
         tempRead[currentPos] = decompress_chars(as, models->chars, refbp);
+        SNPs[i].refChar = refbp;
+        SNPs[i].targetChar = char2basepair(tempRead[currentPos]);
+        SNPs[i].pos = currentPos;
         prev_pos = currentPos;
         
     }
     currentPos = 0;
     
-    // Insertions and write the read
-    switch (invFlag) {
-            // There is NO inversion
-        case 0:
-            // Write the insertions
-            prev_pos = 0;
-            for (i = 0; i < numIns; i++){
-                
-                insPos = decompress_var(as, models->var, prev_pos, invFlag);
-                prev_pos += insPos;
-                
-                // write the read up to the insertion
-                for (ctrPos=0; ctrPos<insPos; ctrPos++)
-                    read[readCtr++] = tempRead[currentPos], currentPos++;
-                
-                // write the insertion
-                tmpChar = decompress_chars(as, models->chars, O);
-                read[readCtr++] = tmpChar;
-                
-                Insers[i].pos = insPos;
-                Insers[i].targetChar = tmpChar;
-                
-            }
-            
-            // write the rest of the read
-            for (ctrPos=currentPos; ctrPos < models->read_length - numIns; ctrPos++)
-                read[readCtr++] = tempRead[currentPos], currentPos++;
-            
-            //fwrite(read, models->read_length + 3, sizeof(char), fs);
-            returnVal = 0;
-            break;
-            
-            // There is an inversion
-        case 1:
-            prevIns = 0;
-            prev_pos = 0;
-            for (i = 0; i < numIns; i++){
-                
-                insPos = decompress_var(as, models->var, prev_pos, invFlag);
-                prev_pos += insPos;
-                insPos += prevIns;
-                // move the read one position to the left (make room for the insertion)
-                for (ctrPos = models->read_length - 1; ctrPos > insPos; ctrPos--)
-                    tempRead[ctrPos] = tempRead[ctrPos - 1];
-                // Add the insertion
-                tempRead[insPos] = decompress_chars(as, models->chars, O);
-                prevIns = insPos + 1;
-                
-                Insers[i].pos = insPos;
-                Insers[i].targetChar = tmpChar;
-            }
-            
-            // write the read inverted
-            for (ctrPos=0; ctrPos < models->read_length; ctrPos++)
-                read[readCtr++] = bp_complement(tempRead[ models->read_length - 1 - ctrPos]);
-            
-            //fwrite(read, models->read_length + 3, sizeof(char), fs);
-            returnVal = 1;
-            break;
-            
-            
-        default:
-            returnVal = 2;
-            break;
+    prev_pos = 0;
+    for (i = 0; i < numIns; i++){
+        
+        insPos = decompress_var(as, models->var, prev_pos, invFlag);
+        prev_pos += insPos;
+        
+        // write the read up to the insertion
+        for (ctrPos=0; ctrPos<insPos; ctrPos++)
+            read[readCtr++] = tempRead[currentPos], currentPos++;
+        
+        // write the insertion
+        tmpChar = decompress_chars(as, models->chars, O);
+        read[readCtr++] = tmpChar;
+        
+        Insers[i].pos = prev_pos;
+        Insers[i].targetChar = tmpChar;
+        
     }
-    
+
+    struct operation ops[numDels + numIns + numSnps];
+    uint32_t buf[3];
+    uint32_t del_ctr = 0, ins_ctr = 0, rep_ctr = 0;
+    for (uint32_t i = 0; i < numDels + numSnps + numIns; i++) {
+       buf[0] = (del_ctr < numDels) ? Dels[del_ctr] : UINT32_MAX;
+       buf[1] = (ins_ctr < numIns)  ? Insers[ins_ctr].pos  : UINT32_MAX;
+       buf[2] = (rep_ctr < numSnps) ? SNPs[rep_ctr].pos : UINT32_MAX; 
+       uint32_t index = argmin(buf, 3);
+       switch (index) {
+         case 0:
+           if (DEBUG) printf("DELETE at %d\n", (int) Dels[del_ctr]);
+           del_ctr++; 
+           break;
+         case 1:
+           if (DEBUG) printf("INSERT %c at %d\n", Insers[ins_ctr].targetChar, Insers[ins_ctr].pos);
+           ins_ctr++; 
+           break;
+         case 2:
+           if (DEBUG) printf("REPLACE %c at %d\n", basepair2char(SNPs[rep_ctr].targetChar), SNPs[rep_ctr].pos);
+           rep_ctr++;
+           break;
+       }
+    }
     return returnVal;
 }

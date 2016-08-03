@@ -4,20 +4,20 @@
 #include <ctype.h>
 
 #define min(a,b) \
- ({ __typeof__ (a) _a = (a); \
-    __typeof__ (b) _b = (b); \
-    _a < _b ? _a : _b; })
+  ({ __typeof__ (a) _a = (a); \
+   __typeof__ (b) _b = (b); \
+   _a < _b ? _a : _b; })
 
 #define max(a,b) \
- ({ __typeof__ (a) _a = (a); \
-    __typeof__ (b) _b = (b); \
-    _a > _b ? _a : _b; })
+  ({ __typeof__ (a) _a = (a); \
+   __typeof__ (b) _b = (b); \
+   _a > _b ? _a : _b; })
 
 #define DEBUG true
 
 static uint32_t const EDITS = 3;
 
-uint32_t min_index(uint32_t *array, uint32_t size) {
+static uint32_t min_index(uint32_t *array, uint32_t size) {
   uint32_t min = UINT32_MAX;
   uint32_t index = 0;
   for (uint32_t i = 0; i < size; i++) {
@@ -27,6 +27,13 @@ uint32_t min_index(uint32_t *array, uint32_t size) {
     }
   }
   return index;
+}
+
+void init_sequence(struct sequence *seq, uint32_t *Dels, struct ins *Insers, struct snp *SNPs) {
+  seq->n_dels = 0, seq->n_ins = 0, seq->n_snps = 0;
+  seq->Dels = Dels;
+  seq->Insers = Insers;
+  seq->SNPs = SNPs;
 }
 
 static uint32_t edit_dist_helper(char *str1, char *str2, uint32_t s1, uint32_t s2, uint32_t matrix[s1+1][s2+1]) {
@@ -57,126 +64,88 @@ uint32_t edit_dist(char *str1, char *str2, uint32_t s1, uint32_t s2) {
   return dist;
 }
 
-void reconstruct_read_from_ops(struct operation *ops, uint32_t ops_len, char *ref, char *target) {
-  uint32_t ref_ctr = 0, target_ctr = 0;
-  for (uint32_t i = 0; i < ops_len; i++) {
-    switch (ops[i].edit_op) {
-      case MATCH: {
-        for (int k = 0; k < ops[i].value; k++) {
-          target[target_ctr] = ref[ref_ctr];
-          target_ctr++;
-          ref_ctr++;
-        }
-        break;
-                  }
-      case REPLACE: {
-        target[target_ctr] = (char) ops[i].value;
-        target_ctr++;
-        ref_ctr++;
-        break;
-                    }
-      case DELETE: {
-        ref_ctr += ops[i].value;
-        break;
-                   }
-      case INSERT:
-        target[target_ctr] = (char) ops[i].value;
-        target_ctr++;
-        break;
+static void fill_target(char *ref, char *target, int prev_pos, int cur_pos, uint32_t *ref_pos, uint32_t *Dels, uint32_t *dels_pos, uint32_t numDels) {
 
+  uint32_t ref_start = *ref_pos;
+  if (prev_pos == cur_pos) return;
+  // this is buggy
+  for (int i = prev_pos; i < cur_pos; i++) {
+    while (*dels_pos < numDels && *ref_pos >= Dels[*dels_pos]) {
+      printf("DELETE %d\n", Dels[*dels_pos]);
+      (*ref_pos)++; 
+      (*dels_pos)++;
     }
+    target[i] = ref[*ref_pos];
+    (*ref_pos)++;
   }
+  printf("MATCH [%d, %d), ref [%d, %d)\n", prev_pos, cur_pos, ref_start, *ref_pos);
 }
 
-static uint32_t compact_seq(struct operation *tmp_seq, uint32_t count, struct operation *seq) {
-  uint32_t run = 0;
+void reconstruct_read_from_ops(struct sequence *seq, char *ref, char *target, uint32_t len) {
+  uint32_t start_copy = 0, ref_pos = 0;
 
-  uint32_t length = 0;
-  uint32_t total_structs = 0;
+  uint32_t ins_pos = 0, snps_pos = 0, dels_pos = 0;
+  uint32_t numIns = seq->n_ins, numSnps = seq->n_snps, numDels = seq->n_dels;
+  struct ins *Insers = seq->Insers;
+  struct snp *SNPs = seq->SNPs;
+  uint32_t *Dels = seq->Dels;
 
-  uint32_t num_dels = 0;
-  uint32_t num_ins = 0;
+  uint32_t buf[2];
 
-  edit edit_type = DELETE;
-  for (int32_t i = count - 1; i >= 0; i--) {
-    if (run != 0 && edit_type != tmp_seq[i].edit_op) {
-      seq->edit_op = edit_type;
-      seq->value = run;
-      
-      if (edit_type == MATCH) {
-        if (DEBUG) printf("MATCH %d\n", (int) seq->value);
-        length += seq->value;
-      } else {
-        num_dels += seq->value;
-        if (DEBUG) printf("DELETE %d\n", (int) seq->value);
-      }
-      run = 0;
-      seq++;
-      total_structs++;
-    }
-    switch (tmp_seq[i].edit_op) {
-      case MATCH:
-        run++;
-        edit_type = MATCH;
-        break;
-      case REPLACE: 
-        seq->edit_op = REPLACE;
-        seq->value = tmp_seq[i].value;
-        if (DEBUG) {
-          printf("REPLACE %c\n", (char) tmp_seq[i].value);
-        }
-        total_structs++;
-        length++;
-        seq++;
-        break;
-      case INSERT:
-        seq->edit_op = INSERT;
-        seq->value = tmp_seq[i].value;
-        if (DEBUG) {
-          printf("INSERT %c\n", (char) tmp_seq[i].value);
-        }
-        num_ins++;
-
-        total_structs++;
-        length++;
-        seq++;
-        break;
-      case DELETE:
-        run++;
-        edit_type = DELETE;
-        break;
-    }
+  if (numDels > 0 && Dels[dels_pos] == 0) {
+    ref_pos++;
+    dels_pos++;
   }
-  if (run > 0) {
-    seq->edit_op = edit_type;
-    seq->value = run;
-    if (edit_type == MATCH) {
-      length += seq->value;
-      if (DEBUG) printf("MATCH %d\n", (int) seq->value);
+  for (uint32_t i = 0; i < numIns + numSnps; i++) {
+    buf[0] = (ins_pos < numIns)  ? Insers[ins_pos].pos  : UINT32_MAX;
+    buf[1] = (snps_pos < numSnps) ? SNPs[snps_pos].pos : UINT32_MAX;
+    uint32_t index = min_index(buf, 2);
+    if (index == 0) {
+      fill_target(ref, target, start_copy, Insers[ins_pos].pos, &ref_pos, Dels, &dels_pos, numDels);
+      printf("Insert %c at %d\n", Insers[ins_pos].targetChar, Insers[ins_pos].pos);
+      target[Insers[ins_pos].pos] = Insers[ins_pos].targetChar;
+      start_copy = Insers[ins_pos].pos + 1;
+      ins_pos++;
     } else {
-      num_dels += seq->value;
-      if (DEBUG) printf("DELETE %d\n", (int) seq->value);
+      fill_target(ref, target, start_copy, SNPs[snps_pos].pos, &ref_pos, Dels, &dels_pos, numDels);
+      printf("Replace %c at %d\n", SNPs[snps_pos].targetChar, SNPs[snps_pos].pos);
+      target[SNPs[snps_pos].pos] = SNPs[snps_pos].targetChar;
+      start_copy = SNPs[snps_pos].pos + 1;
+      snps_pos++;
+      ref_pos++;
     }
-    total_structs++;
   }
-  return total_structs;
+  fill_target(ref, target, start_copy, len, &ref_pos, Dels, &dels_pos, numDels);
 }
 
 // sequence transforms str2 into str1
 // callee allocates a large enough array (>= sizeof(operation) * max(s1, 22)) 
 // returns number of operations used 
-uint32_t edit_sequence(char *str1, char *str2, uint32_t s1, uint32_t s2, struct operation *seq) {
+uint32_t edit_sequence(char *str1, char *str2, uint32_t s1, uint32_t s2, struct sequence *seq) {
+
+  /*
+  str2 = "TAAGCCTAAGCCTAAGCCTAAGCC";
+  str1 = "TAAGCCTAAGGAAAGGCCGAAGGG";
+  s1 = strlen(str1);
+  s2 = s1;*/
+
+  /*
+  str2 = "CCTAAGCCTAA";
+  str1 = "GGGTAACCGCG";
+  s1 = 11;
+  s2 = s1;*/
   uint32_t matrix[s1+1][s2+1];
 
   uint32_t dist = edit_dist_helper(str1, str2, s1, s2, matrix);
 
-  // change this later to be more robust
-  struct operation tmp_seq[1024];
-
   uint32_t i = s1;
   uint32_t j = s2;
-  size_t count = 0;
 
+
+  uint32_t n_dels_tmp = 0, n_ins_tmp = 0, n_snps_tmp = 0; 
+  uint32_t Dels_tmp[max(s1,s2)];
+  struct ins Insers_tmp[max(s1, s2)];
+  struct snp SNPs_tmp[max(s1, s2)];
 
   while (i != 0 || j != 0) {
     uint32_t edits[EDITS];      
@@ -187,40 +156,52 @@ uint32_t edit_sequence(char *str1, char *str2, uint32_t s1, uint32_t s2, struct 
     switch (index) {
       case 0: {
                 if (str1[i-1] != str2[j-1]) {
-                  tmp_seq[count].value = str1[i-1];
-                  tmp_seq[count].edit_op = REPLACE;
-                } else { 
-                  tmp_seq[count].edit_op = MATCH;
+                  SNPs_tmp[n_snps_tmp].targetChar = str1[i-1];
+                  SNPs_tmp[n_snps_tmp].refChar = str2[j-1];
+                  SNPs_tmp[n_snps_tmp].pos = i - 1;
+                  n_snps_tmp++;
                 }
                 i--;
                 j--;
                 break;
               } 
       case 1: {
-                tmp_seq[count].edit_op = DELETE;
+                Dels_tmp[n_dels_tmp] = j - 1;
+                n_dels_tmp++;
                 j--;
                 break;
               }
       case 2: {
-                tmp_seq[count].edit_op = INSERT;
-                tmp_seq[count].value = str1[i-1];
+                Insers_tmp[n_ins_tmp].targetChar = str1[i-1];
+                Insers_tmp[n_ins_tmp].pos = i - 1;
+                n_ins_tmp++;
                 assert(isalpha(str1[i-1]));
                 i--;
                 break;
               }
     }
-    count++;
-  }
-  if (count > 1024) {
-    // fail fast until refactoring 
-    assert(count <= 1024);
   }
 
-  uint32_t ops_len = compact_seq(tmp_seq, count, seq);
-  char buf[1024];
-  reconstruct_read_from_ops(seq, ops_len, str2, buf);
-  printf("Ori: %.100s\nRef: %.100s\nAtt: %.100s\n", str2, str1, buf);
-  printf("Computed dist: %d\n", (int) dist);
+  seq->n_dels = n_dels_tmp;
+  seq->n_ins = n_ins_tmp;
+  seq->n_snps = n_snps_tmp;
+  for (uint32_t i = 0; i < n_dels_tmp; i++) {
+    seq->Dels[i] = Dels_tmp[n_dels_tmp - i - 1];  
+  }
+  for (uint32_t i = 0; i < n_ins_tmp; i++) {
+    seq->Insers[i] = Insers_tmp[n_ins_tmp - i - 1];  
+  }
+  for (uint32_t i = 0; i < n_snps_tmp; i++) {
+    seq->SNPs[i] = SNPs_tmp[n_snps_tmp - i - 1];  
+  }
+
+  if (DEBUG) {
+    char buf[1024];
+    reconstruct_read_from_ops(seq, str2, buf, s2);
+    printf("Ori: %.100s\nRef: %.100s\nAtt: %.100s\n", str2, str1, buf);
+    printf("Computed dist: %d\n", (int) dist);
+  }
+
   exit(1);
   return dist;
 }
