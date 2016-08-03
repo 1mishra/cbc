@@ -131,17 +131,6 @@ void reconstruct_read_from_ops(struct sequence *seq, char *ref, char *target, ui
 // returns number of operations used 
 uint32_t edit_sequence(char *str1, char *str2, uint32_t s1, uint32_t s2, struct sequence *seq) {
 
-  /*
-  str2 = "TAAGCCTAAGCCTAAGCCTAAGCC";
-  str1 = "TAAGCCTAAGGAAAGGCCGAAGGG";
-  s1 = strlen(str1);
-  s2 = s1;*/
-
-  /*
-  str2 = "CCTAAGCCTAA";
-  str1 = "GGGTAACCGCG";
-  s1 = 11;
-  s2 = s1;*/
   uint32_t matrix[s1+1][s2+1];
 
   uint32_t dist = edit_dist_helper(str1, str2, s1, s2, matrix);

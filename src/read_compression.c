@@ -267,15 +267,6 @@ uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char 
     ins Insers[MAX_READ_LENGTH];
     snp SNPs[MAX_READ_LENGTH];
 
-    struct sequence seq;
-    init_sequence(&seq, Dels, Insers, SNPs);
-
-    edit_sequence(read, &(reference[P-1]), rs->read_length, rs->read_length, &seq);
-    uint32_t numIns = seq.n_ins;
-    uint32_t numSnps = seq.n_snps;
-    uint32_t numDels = seq.n_dels;
-
-
     // pos in the reference
     cumsumP = cumsumP + deltaP - 1;// DeltaP is 1-based
     
@@ -291,6 +282,13 @@ uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char 
         return cumsumP;
     }
     
+    struct sequence seq;
+    init_sequence(&seq, Dels, Insers, SNPs);
+    uint32_t numIns = seq.n_ins;
+    uint32_t numSnps = seq.n_snps;
+    uint32_t numDels = seq.n_dels;
+
+    edit_sequence(read, &(reference[P-1]), rs->read_length, rs->read_length, &seq);
     compress_match(as, rs->match, 0, deltaP);
     
     // Compress the edits

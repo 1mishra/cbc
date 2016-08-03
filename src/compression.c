@@ -140,6 +140,9 @@ void* compress(void *thread_info){
     
     while (compress_line(as, samBlock, info.lossiness)) {
         ++lineCtr;
+        if (lineCtr % 10000 == 0) {
+          printf("[cbc] compressed %" PRIu32 " lines\n", lineCtr);
+        }
     }
     // Load and compress the blocks
     //while(compress_block(as, samBlock)){
