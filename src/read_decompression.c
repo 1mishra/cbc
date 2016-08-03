@@ -456,7 +456,6 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
         delPos = decompress_var(as, models->var, prev_pos, invFlag);
         //if (DEBUG) printf("Delete ref at %d\n", delPos + prev_pos);
         Dels[ctrDels] = delPos + prev_pos;
-        printf("Delete: %d\n", Dels[ctrDels]);
         prev_pos += delPos;
     }
 
@@ -481,7 +480,7 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
       read[i] = 'Z';
       assert(isalpha(read[i]));
     }
-    if (numDels > 0 && Dels[dels_pos] == 0) {
+    while (numDels > 0 && Dels[dels_pos] == ref_pos) {
       if (DEBUG) printf("DELETE %d\n", Dels[dels_pos]);
       (ref_pos)++; 
       (dels_pos)++;

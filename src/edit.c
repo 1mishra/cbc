@@ -14,6 +14,7 @@
    _a > _b ? _a : _b; })
 
 #define DEBUG false
+#define VERIFY true
 
 static uint32_t const EDITS = 3;
 
@@ -95,7 +96,7 @@ void reconstruct_read_from_ops(struct sequence *seq, char *ref, char *target, ui
 
   uint32_t buf[2];
 
-  if (numDels > 0 && Dels[dels_pos] == 0) {
+  while (numDels > 0 && ref_pos == Dels[dels_pos]) {
     if (DEBUG) printf("DELETE %d\n", Dels[dels_pos]);
     ref_pos++;
     dels_pos++;
@@ -207,12 +208,14 @@ uint32_t edit_sequence(char *str1, char *str2, uint32_t s1, uint32_t s2, struct 
     printf("\n");*/
   }
 
-  if (DEBUG) {
+
+  if (VERIFY || DEBUG) {
     char buf[1024];
     reconstruct_read_from_ops(seq, str2, buf, s2);
-    printf("Ori: %.100s\nRef: %.100s\nAtt: %.100s\n", str2, str1, buf);
-    printf("Distance between the reconstructed and ref: %d\n", edit_dist(str1, buf, s1, s1));
-    printf("Computed dist: %d\n", (int) dist);
+    assert(edit_dist(str1, buf, s1, s1) == 0);
+    if (DEBUG) printf("Ori: %.100s\nRef: %.100s\nAtt: %.100s\n", str2, str1, buf);
+    if (DEBUG) printf("Distance between the reconstructed and ref: %d\n", edit_dist(str1, buf, s1, s1));
+    if (DEBUG) printf("Computed dist: %d\n", (int) dist);
   }
 
   return dist;
