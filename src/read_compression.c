@@ -322,7 +322,6 @@ uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char 
         prev_pos = Insers[i].pos;
     }
 
-    /*
     prev_pos = 0;
     for (i = 0; i < numSnps; i++){
         SNPs[i].pos = SNPs[i].pos - prev_pos;
@@ -330,7 +329,7 @@ uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char 
         compress_chars(as, rs->chars, SNPs[i].refChar, SNPs[i].targetChar);
         //printf("Replace %d with %d offset %d, prev_pos = %d\n", SNPs[i].refChar, SNPs[i].targetChar, SNPs[i].pos, prev_pos);
         prev_pos += SNPs[i].pos;
-    }*/
+    }
     return cumsumP;
     
 }

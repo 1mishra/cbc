@@ -461,7 +461,6 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
         prev_pos = Insers[i].pos;
     }
 
-    /*
     // SNPS
     prev_pos = 0;
     uint32_t ref_pos = 0;
@@ -470,7 +469,15 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
         assert(prev_pos <  models->read_length);
         snpPos = decompress_var(as, models->var, prev_pos, invFlag);
 
-        ref_pos += snpPos;
+        // Get adjusted ref_pos
+        ref_pos = snpPos + prev_pos; 
+        for (int i = 0; i < numDels; i++) {
+          if (Dels[i] <= ref_pos) ref_pos++;
+        }
+        for (int i = numIns - 1; i >= 0; i--) {
+          if (Insers[i].pos <= ref_pos) ref_pos--;
+        }
+
         refbp = char2basepair( reference[pos + ref_pos - 1] );
         SNPs[i].refChar = refbp;
         SNPs[i].targetChar = char2basepair(decompress_chars(as, models->chars, refbp));
@@ -480,6 +487,6 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
         prev_pos += snpPos;
 
     }
-    reconstruct_read_from_ops(&seq, &(reference[pos - 1]), read, models->read_length);*/
+    reconstruct_read_from_ops(&seq, &(reference[pos - 1]), read, models->read_length);
     return returnVal;
 }
