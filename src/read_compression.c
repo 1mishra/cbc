@@ -262,10 +262,7 @@ uint32_t compress_chars(Arithmetic_stream a, stream_model *c, enum BASEPAIR ref,
  ******************************************/
 uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char *read, uint32_t P, uint32_t deltaP, uint8_t flag){
     
-    unsigned int numIns = 0, numDels = 0, numSnps = 0;
-    unsigned int prevPosI = 0, prevPosD = 0, prevPosSNP = 0;
     int i = 0;
-
     uint32_t Dels[MAX_READ_LENGTH];
     ins Insers[MAX_READ_LENGTH];
     snp SNPs[MAX_READ_LENGTH];
@@ -273,15 +270,14 @@ uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char 
     struct sequence seq;
     init_sequence(&seq, Dels, Insers, SNPs);
 
-    uint32_t dist = edit_sequence(read, &(reference[P-1]), rs->read_length, rs->read_length, &seq);
+    edit_sequence(read, &(reference[P-1]), rs->read_length, rs->read_length, &seq);
+    uint32_t numIns = seq.n_ins;
+    uint32_t numSnps = seq.n_snps;
+    uint32_t numDels = seq.n_dels;
 
-    //uint32_t k, tempValue, tempSum = 0;
-    
-    
+
     // pos in the reference
     cumsumP = cumsumP + deltaP - 1;// DeltaP is 1-based
-    
-
     
     
     uint32_t prev_pos = 0;
@@ -297,43 +293,6 @@ uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char 
     
     compress_match(as, rs->match, 0, deltaP);
     
-    /*
-    uint32_t target_ctr = 0;
-    uint32_t ref_ctr = 0;
-    for (uint32_t i = 0; i < ops_len; i++) {
-      switch (operations[i].edit_op) {
-        case MATCH:
-          target_ctr += operations[i].value;
-          ref_ctr += operations[i].value;
-          break;
-        case REPLACE:
-          SNPs[numSnps].pos = target_ctr - prevPosSNP;
-          SNPs[numSnps].refChar = char2basepair(reference[target_ctr + P - 1]);
-          SNPs[numSnps].targetChar = char2basepair((char) operations[i].value);
-          assert(SNPs[numSnps].refChar != SNPs[numSnps].targetChar);
-          prevPosSNP = target_ctr;
-          target_ctr++;
-          ref_ctr++;
-          numSnps++;
-          break;
-        case INSERT:
-          Insers[numIns].pos = target_ctr - prevPosI;
-          Insers[numIns].targetChar = char2basepair((char) operations[i].value);
-          prevPosI = target_ctr;
-          target_ctr++;
-          numIns++;
-          break;
-        case DELETE:
-          for (uint32_t k = 0; k < operations[i].value; k++) {
-            Dels[numDels] = ref_ctr - prevPosD;
-            prevPosD = ref_ctr;
-            numDels++;
-            ref_ctr++;
-          }
-          break;
-      }
-    }
-    
     // Compress the edits
     if ((numDels | numIns) == 0) {
         compress_snps(as, rs->snps, numSnps);
@@ -344,31 +303,34 @@ uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char 
         compress_indels(as, rs->indels, numDels);
         compress_indels(as, rs->indels, numIns);
     }
+
+    printf("snps %d, dels %d, ins %d\n", numSnps, numDels, numIns);
     
     // Store the positions and Chars in the corresponding vector
     prev_pos = 0;
     
     for (i = 0; i < numDels; i++){
-        compress_var(as, rs->var, Dels[i], prev_pos, flag);
+        compress_var(as, rs->var, Dels[i] - prev_pos, prev_pos, flag);
         prev_pos += Dels[i];
     }
     prev_pos = 0;
-    for (i = 0; i < numSnps; i++){
-        compress_var(as, rs->var, SNPs[i].pos, prev_pos, flag); 
-        compress_chars(as, rs->chars, SNPs[i].refChar, SNPs[i].targetChar);
-        prev_pos += SNPs[i].pos;
+    for (i = 0; i < numIns; i++){
+        Insers[i].pos = Insers[i].pos - prev_pos;
+        compress_var(as, rs->var, Insers[i].pos, prev_pos, flag);
+        compress_chars(as, rs->chars, O, Insers[i].targetChar);
+        //printf("Insert %c at pos %d\n", basepair2char(Insers[i].targetChar), Insers[i].pos + prev_pos);
+        prev_pos = Insers[i].pos;
     }
 
+    /*
     prev_pos = 0;
-    for (i = 0; i < numIns; i++){
-        compress_var(as, rs->var, Insers[i].pos, prev_pos, flag);
-        prev_pos += Insers[i].pos;
-        
-        compress_chars(as, rs->chars, O, Insers[i].targetChar);
-    }
-    
-    
-*/
+    for (i = 0; i < numSnps; i++){
+        SNPs[i].pos = SNPs[i].pos - prev_pos;
+        compress_var(as, rs->var, SNPs[i].pos, prev_pos, flag); 
+        compress_chars(as, rs->chars, SNPs[i].refChar, SNPs[i].targetChar);
+        //printf("Replace %d with %d offset %d, prev_pos = %d\n", SNPs[i].refChar, SNPs[i].targetChar, SNPs[i].pos, prev_pos);
+        prev_pos += SNPs[i].pos;
+    }*/
     return cumsumP;
     
 }

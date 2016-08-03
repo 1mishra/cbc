@@ -13,7 +13,7 @@
    __typeof__ (b) _b = (b); \
    _a > _b ? _a : _b; })
 
-#define DEBUG true
+#define DEBUG false
 
 static uint32_t const EDITS = 3;
 
@@ -71,14 +71,14 @@ static void fill_target(char *ref, char *target, int prev_pos, int cur_pos, uint
   // this is buggy
   for (int i = prev_pos; i < cur_pos; i++) {
     while (*dels_pos < numDels && *ref_pos >= Dels[*dels_pos]) {
-      printf("DELETE %d\n", Dels[*dels_pos]);
+      if (DEBUG) printf("DELETE %d\n", Dels[*dels_pos]);
       (*ref_pos)++; 
       (*dels_pos)++;
     }
     target[i] = ref[*ref_pos];
     (*ref_pos)++;
   }
-  printf("MATCH [%d, %d), ref [%d, %d)\n", prev_pos, cur_pos, ref_start, *ref_pos);
+  if (DEBUG) printf("MATCH [%d, %d), ref [%d, %d)\n", prev_pos, cur_pos, ref_start, *ref_pos);
 }
 
 void reconstruct_read_from_ops(struct sequence *seq, char *ref, char *target, uint32_t len) {
@@ -102,14 +102,14 @@ void reconstruct_read_from_ops(struct sequence *seq, char *ref, char *target, ui
     uint32_t index = min_index(buf, 2);
     if (index == 0) {
       fill_target(ref, target, start_copy, Insers[ins_pos].pos, &ref_pos, Dels, &dels_pos, numDels);
-      printf("Insert %c at %d\n", Insers[ins_pos].targetChar, Insers[ins_pos].pos);
-      target[Insers[ins_pos].pos] = Insers[ins_pos].targetChar;
+      if (DEBUG) printf("Insert %c at %d\n", basepair2char(Insers[ins_pos].targetChar), Insers[ins_pos].pos);
+      target[Insers[ins_pos].pos] = basepair2char(Insers[ins_pos].targetChar);
       start_copy = Insers[ins_pos].pos + 1;
       ins_pos++;
     } else {
       fill_target(ref, target, start_copy, SNPs[snps_pos].pos, &ref_pos, Dels, &dels_pos, numDels);
-      printf("Replace %c at %d\n", SNPs[snps_pos].targetChar, SNPs[snps_pos].pos);
-      target[SNPs[snps_pos].pos] = SNPs[snps_pos].targetChar;
+      if (DEBUG) printf("Replace %c with %c at %d\n", basepair2char(SNPs[snps_pos].refChar), basepair2char(SNPs[snps_pos].targetChar), SNPs[snps_pos].pos);
+      target[SNPs[snps_pos].pos] = basepair2char(SNPs[snps_pos].targetChar);
       start_copy = SNPs[snps_pos].pos + 1;
       snps_pos++;
       ref_pos++;
@@ -156,8 +156,9 @@ uint32_t edit_sequence(char *str1, char *str2, uint32_t s1, uint32_t s2, struct 
     switch (index) {
       case 0: {
                 if (str1[i-1] != str2[j-1]) {
-                  SNPs_tmp[n_snps_tmp].targetChar = str1[i-1];
-                  SNPs_tmp[n_snps_tmp].refChar = str2[j-1];
+                  SNPs_tmp[n_snps_tmp].targetChar = char2basepair(str1[i-1]);
+                  SNPs_tmp[n_snps_tmp].refChar = char2basepair(str2[j-1]);
+                  //printf("Replace %c with %c, Reference: %d, targetPos: %d\n", str2[j-1], str1[i-1], (j-1), (i-1));
                   SNPs_tmp[n_snps_tmp].pos = i - 1;
                   n_snps_tmp++;
                 }
@@ -172,7 +173,7 @@ uint32_t edit_sequence(char *str1, char *str2, uint32_t s1, uint32_t s2, struct 
                 break;
               }
       case 2: {
-                Insers_tmp[n_ins_tmp].targetChar = str1[i-1];
+                Insers_tmp[n_ins_tmp].targetChar = char2basepair(str1[i-1]);
                 Insers_tmp[n_ins_tmp].pos = i - 1;
                 n_ins_tmp++;
                 assert(isalpha(str1[i-1]));
@@ -202,6 +203,5 @@ uint32_t edit_sequence(char *str1, char *str2, uint32_t s1, uint32_t s2, struct 
     printf("Computed dist: %d\n", (int) dist);
   }
 
-  exit(1);
   return dist;
 }
