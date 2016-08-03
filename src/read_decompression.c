@@ -420,7 +420,7 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
     prev_pos = 0;
     for (ctrDels = 0; ctrDels < numDels; ctrDels++){
         delPos = decompress_var(as, models->var, prev_pos, invFlag);
-        if (DEBUG) printf("Delete ref offset %d, prev_pos %d\n", delPos, prev_pos);
+        if (DEBUG) printf("Delete ref at %d\n", delPos + prev_pos);
         Dels[ctrDels] = delPos + prev_pos;
         prev_pos += delPos;
     }
@@ -432,7 +432,7 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
         insPos = decompress_var(as, models->var, prev_pos, invFlag);
         Insers[i].pos = prev_pos + insPos;
         Insers[i].targetChar = char2basepair(decompress_chars(as, models->chars, O));
-        if (DEBUG) printf("Insert %c at offset %d, prev_pos %d\n", basepair2char(Insers[i].targetChar), insPos, prev_pos);
+        if (DEBUG) printf("Insert %c at %d\n", basepair2char(Insers[i].targetChar), insPos + prev_pos);
         prev_pos += insPos;
     }
 
@@ -455,7 +455,7 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
           buf[1] = (k < numDels) ? Dels[k] : UINT32_MAX;
           int index = argmin(buf, 2); 
           if (index == 0) {
-            if (ref_pos >= buf[0]) {
+            if (snpPos + prev_pos >= buf[0]) {
               ref_pos--; 
               j++;
             } else break;

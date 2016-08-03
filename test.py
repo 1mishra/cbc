@@ -11,7 +11,7 @@ def complement(base):
   elif base == 'T':
     return 'A'
   else:
-    print "Complement failed"
+    return 'N'
 
 def reverse_complement(string):
   return ''.join(map(complement, string[::-1]))

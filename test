@@ -1,5 +1,5 @@
 #!/bin/bash
-./bin/program ../dna/ce_part.sam compressed ../dna/ce.fa &&
-./bin/program -x compressed uncompressed ../dna/ce.fa &&
-echo "Checking for differences" &&
+./bin/program ../dna/ce_part.sam compressed ../dna/ce.fa 
+./bin/program -x compressed uncompressed ../dna/ce.fa
+echo "Checking for differences" 
 python test.py ../dna/ce_part.sam uncompressed
