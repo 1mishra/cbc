@@ -10,7 +10,7 @@
 #include <ctype.h>
 #include <stdint.h>
 
-#define DEBUG true
+#define DEBUG false
 //**************************************************************//
 //                                                              //
 //                  STORE REFERENCE IN MEMORY                   //
@@ -355,6 +355,7 @@ static void fill_target(char *ref, char *target, uint32_t prev_pos, uint32_t cur
   }
   for (int i = prev_pos; i < cur_pos; i++) {
     target[i] = ref[*ref_pos];
+    assert(isalpha(target[i]));
     (*ref_pos)++;
     while (*dels_pos < numDels && *ref_pos >= Dels[*dels_pos]) {
       if (DEBUG) printf("DELETE %d\n", Dels[*dels_pos]);
@@ -369,7 +370,8 @@ static void handle_insertions(char *ref, char *target, uint32_t *start_copy, int
   while (*ins_pos < numIns && Insers[*ins_pos].pos < cur_pos) {
     fill_target(ref, target, *start_copy, Insers[*ins_pos].pos, ref_pos, Dels, dels_pos, numDels);
     if (DEBUG) printf("Insert %c at %d\n", basepair2char(Insers[*ins_pos].targetChar), Insers[*ins_pos].pos);
-    target[Insers[*ins_pos].pos] = Insers[*ins_pos].targetChar;
+    target[Insers[*ins_pos].pos] = basepair2char(Insers[*ins_pos].targetChar);
+    assert(isalpha(target[Insers[*ins_pos].pos]));
     *start_copy = Insers[*ins_pos].pos + 1;
     (*ins_pos)++;
   }
@@ -477,6 +479,7 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
 
     for (int i = 0; i < models->read_length; i++) {
       read[i] = 'Z';
+      assert(isalpha(read[i]));
     }
     if (numDels > 0 && Dels[dels_pos] == 0) {
       if (DEBUG) printf("DELETE %d\n", Dels[dels_pos]);
@@ -503,6 +506,7 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
         SNPs[i].refChar = refbp;
         SNPs[i].targetChar = char2basepair(decompress_chars(as, models->chars, refbp));
         read[SNPs[i].pos] = basepair2char(SNPs[i].targetChar);
+        assert(isalpha(read[SNPs[i].pos]));
         if (DEBUG) printf("Replace %c with %c at %d\n", basepair2char(SNPs[i].refChar), basepair2char(SNPs[i].targetChar), SNPs[i].pos);
         ref_pos++;
         prev_pos += snpPos;
