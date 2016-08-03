@@ -10,7 +10,7 @@
 #include <ctype.h>
 #include <stdint.h>
 
-#define DEBUG true
+#define DEBUG false
 //**************************************************************//
 //                                                              //
 //                  STORE REFERENCE IN MEMORY                   //
@@ -405,7 +405,7 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
         }
     }
     
-    //printf("snps %d, dels %d, ins %d\n", numSnps, numDels, numIns);
+    if (DEBUG) printf("snps %d, dels %d, ins %d\n", numSnps, numDels, numIns);
 
     // Reconstruct the read
     
@@ -420,7 +420,7 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
     prev_pos = 0;
     for (ctrDels = 0; ctrDels < numDels; ctrDels++){
         delPos = decompress_var(as, models->var, prev_pos, invFlag);
-        //printf("Delete ref at %d, prev %d\n", delPos, prev_pos);
+        if (DEBUG) printf("Delete ref offset %d, prev_pos %d\n", delPos, prev_pos);
         Dels[ctrDels] = delPos + prev_pos;
         prev_pos += delPos;
     }
@@ -432,7 +432,7 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
         insPos = decompress_var(as, models->var, prev_pos, invFlag);
         Insers[i].pos = prev_pos + insPos;
         Insers[i].targetChar = char2basepair(decompress_chars(as, models->chars, O));
-        //printf("Insert %c at offset %d, prev_pos %d\n", basepair2char(Insers[i].targetChar), insPos, prev_pos);
+        if (DEBUG) printf("Insert %c at offset %d, prev_pos %d\n", basepair2char(Insers[i].targetChar), insPos, prev_pos);
         prev_pos += insPos;
     }
 
@@ -445,25 +445,34 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
         snpPos = decompress_var(as, models->var, prev_pos, invFlag);
 
         // Get adjusted ref_pos
-        // TODO FIX THIS. it's buggy
         ref_pos = snpPos + prev_pos; 
 
-        int add = 0;
-        for (int i = 0; i < numDels; i++) {
-          if (Dels[i] <= ref_pos) add++;
+        int j = 0; // inserts
+        int k = 0; // deletsions
+        uint32_t buf[2];
+        while (true) {
+          buf[0] = (j < numIns) ? Insers[j].pos : UINT32_MAX;
+          buf[1] = (k < numDels) ? Dels[k] : UINT32_MAX;
+          int index = argmin(buf, 2); 
+          if (index == 0) {
+            if (ref_pos >= buf[0]) {
+              ref_pos--; 
+              j++;
+            } else break;
+          } else {
+            if (ref_pos >= buf[1]) {
+              ref_pos++;
+              k++;
+            } else break;
+          }
         }
-        int sub = 0;
-        for (int i = numIns - 1; i >= 0; i--) {
-          if (Insers[i].pos <= ref_pos) sub++;
-        }
-        ref_pos = ref_pos + add - sub;
 
         refbp = char2basepair( reference[pos + ref_pos - 1] );
         SNPs[i].refChar = refbp;
         SNPs[i].targetChar = char2basepair(decompress_chars(as, models->chars, refbp));
         SNPs[i].pos = prev_pos + snpPos;
 
-        //printf("Replace %c with %c, Reference: %d, offset: %d, prev_pos = %d\n", basepair2char(refbp), basepair2char(SNPs[i].targetChar), ref_pos, snpPos, prev_pos);
+        if (DEBUG) printf("Replace %c with %c, Reference: %d, Target: %d\n", basepair2char(refbp), basepair2char(SNPs[i].targetChar), ref_pos, snpPos + prev_pos);
         prev_pos += snpPos;
 
     }

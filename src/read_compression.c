@@ -8,7 +8,7 @@
 
 
 #include "read_compression.h"
-
+#define DEBUG false
 
 
 /************************
@@ -304,7 +304,7 @@ uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char 
         compress_indels(as, rs->indels, numIns);
     }
 
-    //printf("snps %d, dels %d, ins %d\n", numSnps, numDels, numIns);
+    if (DEBUG) printf("snps %d, dels %d, ins %d\n", numSnps, numDels, numIns);
     
     // Store the positions and Chars in the corresponding vector
     prev_pos = 0;
@@ -313,7 +313,7 @@ uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char 
         assert(prev_pos < rs->read_length);
         Dels[i] = Dels[i] - prev_pos;
         compress_var(as, rs->var, Dels[i], prev_pos, flag);
-        //printf("Delete at pos %d, prev %d \n", Dels[i], prev_pos);
+        if (DEBUG) printf("Delete at offset %d, prev %d \n", Dels[i], prev_pos);
         prev_pos += Dels[i];
     }
     prev_pos = 0;
@@ -321,7 +321,7 @@ uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char 
         Insers[i].pos = Insers[i].pos - prev_pos;
         compress_var(as, rs->var, Insers[i].pos, prev_pos, flag);
         compress_chars(as, rs->chars, O, Insers[i].targetChar);
-        //printf("Insert %c at offset %d, prev_pos %d\n", basepair2char(Insers[i].targetChar), Insers[i].pos, prev_pos);
+        if (DEBUG) printf("Insert %c at offset %d, prev_pos %d\n", basepair2char(Insers[i].targetChar), Insers[i].pos, prev_pos);
         prev_pos += Insers[i].pos;
     }
 
@@ -330,7 +330,7 @@ uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char 
         SNPs[i].pos = SNPs[i].pos - prev_pos;
         compress_var(as, rs->var, SNPs[i].pos, prev_pos, flag); 
         compress_chars(as, rs->chars, SNPs[i].refChar, SNPs[i].targetChar);
-        //printf("Replace %c with %c offset %d, prev_pos = %d\n", basepair2char(SNPs[i].refChar), basepair2char(SNPs[i].targetChar), SNPs[i].pos, prev_pos);
+        if (DEBUG) printf("Replace %c with %c offset %d, prev_pos = %d\n", basepair2char(SNPs[i].refChar), basepair2char(SNPs[i].targetChar), SNPs[i].pos, prev_pos);
         prev_pos += SNPs[i].pos;
     }
     return cumsumP;

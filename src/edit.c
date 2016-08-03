@@ -67,7 +67,9 @@ uint32_t edit_dist(char *str1, char *str2, uint32_t s1, uint32_t s2) {
 static void fill_target(char *ref, char *target, int prev_pos, int cur_pos, uint32_t *ref_pos, uint32_t *Dels, uint32_t *dels_pos, uint32_t numDels) {
 
   uint32_t ref_start = *ref_pos;
-  if (prev_pos == cur_pos) return;
+  if (prev_pos == cur_pos) {
+    return;
+  }
   // this is buggy
   for (int i = prev_pos; i < cur_pos; i++) {
     while (*dels_pos < numDels && *ref_pos >= Dels[*dels_pos]) {
@@ -94,6 +96,7 @@ void reconstruct_read_from_ops(struct sequence *seq, char *ref, char *target, ui
   uint32_t buf[2];
 
   if (numDels > 0 && Dels[dels_pos] == 0) {
+    if (DEBUG) printf("DELETE %d\n", Dels[dels_pos]);
     ref_pos++;
     dels_pos++;
   }
