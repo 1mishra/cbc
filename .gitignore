@@ -4,3 +4,4 @@ bin
 src/*.swp
 compressed
 uncompressed
+**.swp
