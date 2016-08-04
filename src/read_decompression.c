@@ -470,16 +470,11 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
         //if (DEBUG) printf("Insert %c at offset: %d, prev_pos %d\n", basepair2char(Insers[i].targetChar), insPos, prev_pos);
         prev_pos += insPos;
     }
-
     assert(numDels == numIns);
 
     uint32_t ins_pos = 0, dels_pos = 0;
     uint32_t start_copy = 0, ref_pos = 0;
 
-    for (int i = 0; i < models->read_length; i++) {
-      read[i] = 'Z';
-      assert(isalpha(read[i]));
-    }
     while (numDels > 0 && dels_pos < numDels && Dels[dels_pos] == ref_pos) {
       if (DEBUG) printf("DELETE %d\n", Dels[dels_pos]);
       (ref_pos)++; 

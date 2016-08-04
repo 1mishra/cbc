@@ -284,11 +284,15 @@ uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char 
     
     struct sequence seq;
     init_sequence(&seq, Dels, Insers, SNPs);
+
+    edit_sequence(read, &(reference[P-1]), rs->read_length, rs->read_length, &seq);
     uint32_t numIns = seq.n_ins;
     uint32_t numSnps = seq.n_snps;
     uint32_t numDels = seq.n_dels;
 
-    edit_sequence(read, &(reference[P-1]), rs->read_length, rs->read_length, &seq);
+    if (DEBUG) printf("snps %d, dels %d, ins %d\n", numSnps, numDels, numIns);
+    assert(numDels == numIns);
+
     compress_match(as, rs->match, 0, deltaP);
     
     // Compress the edits
@@ -302,7 +306,6 @@ uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char 
         compress_indels(as, rs->indels, numIns);
     }
 
-    if (DEBUG) printf("snps %d, dels %d, ins %d\n", numSnps, numDels, numIns);
     
     // Store the positions and Chars in the corresponding vector
     prev_pos = 0;

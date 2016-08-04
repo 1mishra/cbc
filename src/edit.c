@@ -14,7 +14,7 @@
    _a > _b ? _a : _b; })
 
 #define DEBUG false
-#define VERIFY false
+#define VERIFY true
 
 static uint32_t const EDITS = 3;
 
@@ -191,11 +191,9 @@ uint32_t edit_sequence(char *str1, char *str2, uint32_t s1, uint32_t s2, struct 
   }
   for (uint32_t i = 0; i < n_snps_tmp; i++) {
     seq->SNPs[i] = SNPs_tmp[n_snps_tmp - i - 1];  
-    /*
-    printf("Pos %d\n", seq->SNPs[i].pos);
-    printf("refChar %c\n", basepair2char(seq->SNPs[i].refChar));
-    printf("targetChar %c\n", basepair2char(seq->SNPs[i].targetChar));
-    printf("\n");*/
+  }
+  if (DEBUG) {
+    printf("snps %d, dels %d, ins %d\n", n_dels_tmp, n_ins_tmp, n_snps_tmp);
   }
 
 
