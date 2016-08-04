@@ -402,6 +402,7 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
     
     enum BASEPAIR refbp;
     
+    read[models->read_length] = '\0';
     if (pos < prevPos){
         deltaPos = pos;
     }else{

@@ -14,7 +14,7 @@
    _a > _b ? _a : _b; })
 
 #define DEBUG false
-#define VERIFY true
+#define VERIFY false
 
 static uint32_t const EDITS = 3;
 
