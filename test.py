@@ -40,11 +40,13 @@ def process_uncompressed(filename):
 def compare(sam, uncompressed):
   sam_reads = process_sam(sam)
   reads = process_uncompressed(uncompressed)
-  assert(len(sam_reads) == len(reads))
+  #assert(len(sam_reads) == len(reads))
   for i, (x, y) in enumerate(zip(sam_reads, reads)):
     if i % 100000 == 0:
       print "Checked " + str(i) + " examples"
-    assert(len(x) == len(y))
+    if (len(x) != len(y)):
+        print "Wrong lengths at example " + str(i)
+        assert(len(x) == len(y))
     value = Levenshtein.editops(x, y)
     dist = Levenshtein.distance(x, y)
     if dist != 0:

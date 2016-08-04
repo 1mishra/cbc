@@ -10,7 +10,7 @@
 #include <ctype.h>
 #include <stdint.h>
 
-#define DEBUG false
+#define DEBUG true
 //**************************************************************//
 //                                                              //
 //                  STORE REFERENCE IN MEMORY                   //
@@ -26,7 +26,9 @@ int store_reference_in_memory(FILE* refFile){
     letterCount = 0;
     
     // Remove the header
-    fgets(header, sizeof(header), refFile);
+    if (ftell(refFile) == 0) {
+      fgets(header, sizeof(header), refFile);
+    }
     
     while (fgets(&reference[letterCount], 1024, refFile))
     {
@@ -74,8 +76,6 @@ uint32_t decompress_read(Arithmetic_stream as, sam_block sb, uint8_t chr_change,
         maskedReadVal = decompress_uint8t(as, models->rlength[k]);
         readLen = readLen | maskedReadVal<<(k*8);
     }
-    
-    
     
     // Decompress the read
     tempP = decompress_pos(as, models->pos, models->pos_alpha, chr_change, &sline->pos);
@@ -420,21 +420,19 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
     if (match) {
       for (ctrPos=0; ctrPos<models->read_length; ctrPos++)
         read[readCtr++] = reference[pos + ctrPos - 1];
-        return 1;
+      return 1;
     }
     // There is no match, retreive the edits
     else{
         numSnps = decompress_snps(as, models->snps);
-        
+        numDels = 0;
+        numIns = 0;
         
         if (numSnps == 0){
             numSnps = decompress_indels(as, models->indels);
             numDels = decompress_indels(as, models->indels);
             numIns = decompress_indels(as, models->indels);
-        } else {
-            numDels = 0;
-            numIns = 0;
-        }
+        } 
     }
     
     if (DEBUG) printf("snps %d, dels %d, ins %d\n", numSnps, numDels, numIns);
@@ -450,12 +448,11 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
     
 
 
-    char *tempRead = (char*)alloca(models->read_length*sizeof(char) + 2);
     // Deletions
     prev_pos = 0;
     for (ctrDels = 0; ctrDels < numDels; ctrDels++){
         delPos = decompress_var(as, models->var, prev_pos, invFlag);
-        //if (DEBUG) printf("Delete ref at %d\n", delPos + prev_pos);
+        if (DEBUG) printf("Delete ref at %d\n", delPos + prev_pos);
         Dels[ctrDels] = delPos + prev_pos;
         prev_pos += delPos;
     }
@@ -468,7 +465,7 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
         insPos = decompress_var(as, models->var, prev_pos, invFlag);
         Insers[i].pos = prev_pos + insPos;
         Insers[i].targetChar = char2basepair(decompress_chars(as, models->chars, O));
-        //if (DEBUG) printf("Insert %c at offset: %d, prev_pos %d\n", basepair2char(Insers[i].targetChar), insPos, prev_pos);
+        if (DEBUG) printf("Insert %c at offset: %d, prev_pos %d\n", basepair2char(Insers[i].targetChar), insPos, prev_pos);
         prev_pos += insPos;
     }
     assert(numDels == numIns);

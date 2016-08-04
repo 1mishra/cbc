@@ -13,8 +13,8 @@
    __typeof__ (b) _b = (b); \
    _a > _b ? _a : _b; })
 
-#define DEBUG false
-#define VERIFY false
+#define DEBUG true
+#define VERIFY true
 
 static uint32_t const EDITS = 3;
 
@@ -193,7 +193,7 @@ uint32_t edit_sequence(char *str1, char *str2, uint32_t s1, uint32_t s2, struct 
     seq->SNPs[i] = SNPs_tmp[n_snps_tmp - i - 1];  
   }
   if (DEBUG) {
-    printf("snps %d, dels %d, ins %d\n", n_dels_tmp, n_ins_tmp, n_snps_tmp);
+    printf("snps %d, dels %d, ins %d\n", n_snps_tmp, n_dels_tmp, n_ins_tmp);
   }
 
 
