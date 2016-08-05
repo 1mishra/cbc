@@ -9,6 +9,7 @@
 
 #include "read_compression.h"
 #define DEBUG false
+#define VERIFY true
 
 
 /************************
@@ -30,14 +31,13 @@ uint32_t compress_read(Arithmetic_stream as, read_models models, read_line samLi
         compress_uint8t(as, models->rlength[k], maskedReadVal);
     }
     
-    printf("%d\n", chr_change);
     // Compress sam line
     PosDiff = compress_pos(as, models->pos, models->pos_alpha, samLine->pos, chr_change);
     tempF = compress_flag(as, models->flag, samLine->invFlag);
     //tempF = compress_flag(as, models->flag, 0);
     chrPos = compress_edits(as, models, samLine->edits, samLine->read, samLine->pos, PosDiff, tempF);
     
-    assert(samLine->pos  == chrPos);
+    if (VERIFY) assert(samLine->pos  == chrPos);
 
     return 1;
 }
@@ -271,7 +271,6 @@ uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char 
     // pos in the reference
     cumsumP = cumsumP + deltaP - 1;// DeltaP is 1-based
     
-    
     uint32_t prev_pos = 0;
     
     
@@ -286,7 +285,6 @@ uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char 
     struct sequence seq;
     init_sequence(&seq, Dels, Insers, SNPs);
 
-    printf("Reference: %.50s\n", &(reference[P-1]));
     edit_sequence(read, &(reference[P-1]), rs->read_length, rs->read_length, &seq);
     uint32_t numIns = seq.n_ins;
     uint32_t numSnps = seq.n_snps;

@@ -10,7 +10,8 @@
 #include <ctype.h>
 #include <stdint.h>
 
-#define DEBUG true
+#define DEBUG false
+#define VERIFY true
 //**************************************************************//
 //                                                              //
 //                  STORE REFERENCE IN MEMORY                   //
@@ -19,17 +20,31 @@
 int store_reference_in_memory(FILE* refFile){
     uint32_t letterCount, endoffile = 1;
     char header[1024];
+    char buf[1024];
     
     reference = (char *) malloc(MAX_BP_CHR*sizeof(char));
     
     // ******* Read and Store Reference****** //
     letterCount = 0;
     
-    // Remove the header
+    // Remove the first header
     if (ftell(refFile) == 0) {
       fgets(header, sizeof(header), refFile);
     }
     
+    while (fgets(buf, 1024, refFile)) {
+      if (buf[0] == '>' || reference[0] == '@') {
+        endoffile = 0;
+        break;
+      }
+      for (int i = 0; i < 1024; i++) {
+        if (buf[i] == '\n') break;
+        reference[letterCount] = toupper(buf[i]);
+        letterCount++;
+      }
+    }
+
+    /*
     while (fgets(&reference[letterCount], 1024, refFile))
     {
         
@@ -44,11 +59,11 @@ int store_reference_in_memory(FILE* refFile){
         }
         letterCount--;
         
-    }
+    }*/
         
     reference[letterCount] = '\0';
-    
-    reference = (char *) realloc(reference, letterCount);
+
+    reference = (char *) realloc(reference, letterCount + 1);
     
     if (endoffile)
         return END_GENOME_FLAG;
@@ -82,39 +97,10 @@ uint32_t decompress_read(Arithmetic_stream as, sam_block sb, uint8_t chr_change,
     
     invFlag = decompress_flag(as, models->flag, &sline->flag);
     
-    reconstruct_read(as, models, tempP, invFlag, sline->read, readLen, sline->cigar);
+    reconstruct_read(as, models, tempP, invFlag, sline->read, readLen, chr_change);
     
     return invFlag;
 }
-
-
-/************************
- * Decompress the cigar
- **********************/
-uint32_t decompress_cigar(Arithmetic_stream as, sam_block sb, struct sam_line_t *sline)
-{
-    uint8_t cigarFlags;
-    int cigarCtr,cigarLen;
-    
-    read_models models = sb->reads->models;
-    
-    
-    // Decompress cigarFlags
-    cigarFlags = decompress_uint8t(as,models->cigarFlags[0]);
-    
-    if(cigarFlags==0) {
-        //The cigar is not the recCigar.
-        cigarLen = decompress_uint8t(as,models->cigar[0]);
-        for(cigarCtr = 0; cigarCtr<cigarLen; cigarCtr++)
-            sline->cigar[cigarCtr] = decompress_uint8t(as,models->cigar[0]);
-        
-        sline->cigar[cigarCtr] = '\0';
-    }
-    
-    return 1;
-}
-
-
 
 /***********************
  * Decompress the Flag
@@ -355,7 +341,7 @@ static void fill_target(char *ref, char *target, uint32_t prev_pos, uint32_t cur
   }
   for (int i = prev_pos; i < cur_pos; i++) {
     target[i] = ref[*ref_pos];
-    assert(isalpha(target[i]));
+    if (VERIFY) assert(isalpha(target[i]));
     (*ref_pos)++;
     while (*dels_pos < numDels && *ref_pos >= Dels[*dels_pos]) {
       if (DEBUG) printf("DELETE %d\n", Dels[*dels_pos]);
@@ -363,7 +349,7 @@ static void fill_target(char *ref, char *target, uint32_t prev_pos, uint32_t cur
       (*dels_pos)++;
     }
   }
-  if (DEBUG) printf("MATCH [%d, %d), ref [%d, %d)\n", prev_pos, cur_pos, ref_start, *ref_pos);
+  //if (DEBUG) printf("MATCH [%d, %d), ref [%d, %d)\n", prev_pos, cur_pos, ref_start, *ref_pos);
 }
 
 static void handle_insertions(char *ref, char *target, uint32_t *start_copy, int cur_pos, uint32_t *ref_pos, struct ins *Insers, uint32_t *ins_pos, uint32_t numIns, uint32_t *Dels, uint32_t *dels_pos, uint32_t numDels) {
@@ -371,7 +357,7 @@ static void handle_insertions(char *ref, char *target, uint32_t *start_copy, int
     fill_target(ref, target, *start_copy, Insers[*ins_pos].pos, ref_pos, Dels, dels_pos, numDels);
     if (DEBUG) printf("Insert %c at %d\n", basepair2char(Insers[*ins_pos].targetChar), Insers[*ins_pos].pos);
     target[Insers[*ins_pos].pos] = basepair2char(Insers[*ins_pos].targetChar);
-    assert(isalpha(target[Insers[*ins_pos].pos]));
+    if (VERIFY) assert(isalpha(target[Insers[*ins_pos].pos]));
     *start_copy = Insers[*ins_pos].pos + 1;
     (*ins_pos)++;
   }
@@ -381,7 +367,7 @@ static void handle_insertions(char *ref, char *target, uint32_t *start_copy, int
 /*****************************************
  * Reconstruct the read
  ******************************************/
-uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos, uint8_t invFlag, char *read, uint32_t readLen, char* recCigar){
+uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos, uint8_t invFlag, char *read, uint32_t readLen, uint8_t chr_change){
     
     unsigned int numIns = 0, numDels = 0, numSnps = 0, delPos = 0, ctrPos = 0, snpPos = 0, insPos = 0;
     uint32_t currentPos = 0, prevIns = 0, prev_pos = 0, delta = 0, deltaPos = 0;
@@ -403,6 +389,11 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
     enum BASEPAIR refbp;
     
     read[models->read_length] = '\0';
+    // reset prevPos if the chromosome changed
+    if (chr_change == 1) {
+      prevPos = 0;
+    }
+
     if (pos < prevPos){
         deltaPos = pos;
     }else{
@@ -410,9 +401,8 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
     }
     prevPos = pos;
     
-    // The read matches perfectly.
     match = decompress_match(as, models->match, deltaPos);
-    
+
     // cumsumP is equal to pos
     cumsumP = pos;
     
@@ -435,19 +425,11 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
         } 
     }
     
+    if (VERIFY) assert(numDels == numIns);
     if (DEBUG) printf("snps %d, dels %d, ins %d\n", numSnps, numDels, numIns);
 
     // Reconstruct the read
     
-    /*
-    struct sequence seq;
-    init_sequence(&seq, Dels, Insers, SNPs);
-    seq.n_ins = numIns;
-    seq.n_snps = numSnps;
-    seq.n_dels = numDels;*/
-    
-
-
     // Deletions
     prev_pos = 0;
     for (ctrDels = 0; ctrDels < numDels; ctrDels++){
@@ -468,7 +450,6 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
         if (DEBUG) printf("Insert %c at offset: %d, prev_pos %d\n", basepair2char(Insers[i].targetChar), insPos, prev_pos);
         prev_pos += insPos;
     }
-    assert(numDels == numIns);
 
     uint32_t ins_pos = 0, dels_pos = 0;
     uint32_t start_copy = 0, ref_pos = 0;
@@ -486,7 +467,7 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
     uint32_t dels_ctr = 0;
     for (i = 0; i < numSnps; i++) {
         
-        assert(prev_pos <= models->read_length);
+        if (VERIFY) assert(prev_pos <= models->read_length);
         snpPos = decompress_var(as, models->var, prev_pos, invFlag);
         SNPs[i].pos = prev_pos + snpPos;
 
@@ -498,7 +479,7 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
         SNPs[i].refChar = refbp;
         SNPs[i].targetChar = char2basepair(decompress_chars(as, models->chars, refbp));
         read[SNPs[i].pos] = basepair2char(SNPs[i].targetChar);
-        assert(isalpha(read[SNPs[i].pos]));
+        if (VERIFY) assert(isalpha(read[SNPs[i].pos]));
         if (DEBUG) printf("Replace %c with %c at %d\n", basepair2char(SNPs[i].refChar), basepair2char(SNPs[i].targetChar), SNPs[i].pos);
         ref_pos++;
         prev_pos += snpPos;
@@ -510,7 +491,8 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
     //reconstruct_read_from_ops(&seq, &(reference[pos - 1]), read, models->read_length);
 
     fill_target(&(reference[pos - 1]), read, start_copy, models->read_length, &ref_pos, Dels, &dels_pos, numDels);
-    assert(ins_pos == dels_pos);
+
+    if (VERIFY) assert(ins_pos == dels_pos);
     if (invFlag == 0) returnVal = 0;
     else if (invFlag == 1) returnVal = 1;
     else returnVal = 2;

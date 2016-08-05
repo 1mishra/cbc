@@ -12,7 +12,6 @@
 #include "sam_block.h"
 #include "read_compression.h"
 
-
 int print_line(struct sam_line_t *sline, uint8_t print_mode, FILE *fs){
     
     char foo[] = "CIGAR";
@@ -58,9 +57,8 @@ int compress_line(Arithmetic_stream as, sam_block samBlock, uint8_t lossiness)  
     if (chr_change == 1){
         // Store Ref sequence in memory
         store_reference_in_memory(samBlock->fref);
-        // Clean snpInRef vector and reset cumsumP
+        // Reset cumsumP
         cumsumP = 0;
-        memset(snpInRef, 0, MAX_BP_CHR);
     }
     
     compress_read(as, samBlock->reads->models, samBlock->reads->lines, chr_change);
@@ -84,7 +82,6 @@ int decompress_line(Arithmetic_stream as, sam_block samBlock, uint8_t lossiness)
     // Loop over the lines of the sam block
         
     chr_change = decompress_rname(as, samBlock->rnames->models, sline.rname);
-    printf("%s\n", sline.rname);
         
     if (chr_change == -1)
         return 0;
@@ -95,11 +92,9 @@ int decompress_line(Arithmetic_stream as, sam_block samBlock, uint8_t lossiness)
             
         // Store Ref sequence in memory
         store_reference_in_memory(samBlock->fref);
-        printf("%.50s\n", reference);
             
-        // Clean snpInRef vector and reset cumsumP
+        // reset cumsumP
         cumsumP = 0;
-        memset(snpInRef, 0, MAX_BP_CHR);
     }
         
     decompression_flag = decompress_read(as,samBlock, chr_change, &sline);

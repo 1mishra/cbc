@@ -13,8 +13,8 @@
    __typeof__ (b) _b = (b); \
    _a > _b ? _a : _b; })
 
-#define DEBUG true
-#define VERIFY true
+#define DEBUG false
+#define VERIFY false
 
 static uint32_t const EDITS = 3;
 

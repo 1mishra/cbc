@@ -440,10 +440,6 @@ int compress_aux(Arithmetic_stream as, aux_models models, char **aux_str, uint8_
 int decompress_aux(Arithmetic_stream as, aux_block aux, char* finalLine);
 
 
-int compress_cigar(Arithmetic_stream as, read_models models, char *cigar, uint8_t cigarFlags);
-
-
-
 int compress_block(Arithmetic_stream as, sam_block samBlock);
 int decompress_block(Arithmetic_stream as, sam_block samBlock);
 int decompress_line(Arithmetic_stream as, sam_block samBlock, uint8_t lossiness);

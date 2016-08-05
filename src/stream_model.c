@@ -7,6 +7,8 @@
 //
 
 #include "stream_model.h"
+#include <stdbool.h>
+#define DEBUG false
 
 void free_models_array(stream_model *model_ptr, uint32_t num_models){
     uint32_t i = 0;
@@ -72,7 +74,10 @@ void send_value_to_as(Arithmetic_stream as, stream_model model, int32_t x){
     
     // Send value to the arithmetic encoder
     arithmetic_encoder_step(as, cumCountX_1, cumCountX, model->n);
-    
+    if (DEBUG) {
+      printf("cumCountX: %d, cumCountX_1: %d\n", cumCountX, cumCountX_1);
+      //printf("x: %d\n", x); 
+    }
 }
 
 int read_value_from_as(Arithmetic_stream as, stream_model model){
@@ -113,5 +118,9 @@ int read_value_from_as(Arithmetic_stream as, stream_model model){
     // update the arithmetic encoder
     arithmetic_decoder_step(as, cumCountX_1, cumCountX, model->n);
     
+    if (DEBUG) {
+      printf("cumCountX: %d, cumCountX_1: %d\n", cumCountX, cumCountX_1);
+      //printf("x: %d\n", x); 
+    }
     return x;
 }
