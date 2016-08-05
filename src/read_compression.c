@@ -339,3 +339,20 @@ uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char 
     
 }
 
+uint32_t compute_delta_to_first_snp(uint32_t prevPos, uint32_t readLen){
+    
+    uint32_t deltaOut;
+    uint32_t j = 0;
+    
+    deltaOut = readLen + 2;
+    
+    for (j=0;j<readLen - prevPos; j++){
+        if (snpInRef[cumsumP - 1 + j + prevPos] == 1){
+            deltaOut = j;
+            break;
+        }
+    }
+    
+    return deltaOut;
+}
+

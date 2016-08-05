@@ -27,6 +27,7 @@
 
 char *reference;
 
+uint8_t snpInRef[MAX_BP_CHR];
 uint32_t cumsumP;
 
 

@@ -55,10 +55,12 @@ int compress_line(Arithmetic_stream as, sam_block samBlock, uint8_t lossiness)  
     chr_change = compress_rname(as, samBlock->rnames->models, *samBlock->rnames->rnames);
         
     if (chr_change == 1){
+
         // Store Ref sequence in memory
         store_reference_in_memory(samBlock->fref);
         // Reset cumsumP
         cumsumP = 0;
+        memset(snpInRef, 0, MAX_BP_CHR);
     }
     
     compress_read(as, samBlock->reads->models, samBlock->reads->lines, chr_change);
@@ -95,6 +97,9 @@ int decompress_line(Arithmetic_stream as, sam_block samBlock, uint8_t lossiness)
             
         // reset cumsumP
         cumsumP = 0;
+
+        memset(snpInRef, 0, MAX_BP_CHR);
+
     }
         
     decompression_flag = decompress_read(as,samBlock, chr_change, &sline);
