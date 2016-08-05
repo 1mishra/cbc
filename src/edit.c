@@ -81,7 +81,7 @@ static void fill_target(char *ref, char *target, int prev_pos, int cur_pos, uint
     }
 
   }
-  assert(*dels_pos <= numDels);
+  if (VERIFY) assert(*dels_pos <= numDels);
   if (DEBUG) printf("MATCH [%d, %d), ref [%d, %d)\n", prev_pos, cur_pos, ref_start, *ref_pos);
 }
 
@@ -122,8 +122,8 @@ void reconstruct_read_from_ops(struct sequence *seq, char *ref, char *target, ui
     }
   }
   fill_target(ref, target, start_copy, len, &ref_pos, Dels, &dels_pos, numDels);
-  assert(snps_pos == numSnps);
-  assert(dels_pos == ins_pos);
+  if (VERIFY) assert(snps_pos == numSnps);
+  if (VERIFY) assert(dels_pos == ins_pos);
 }
 
 // sequence transforms str2 into str1
@@ -173,7 +173,7 @@ uint32_t edit_sequence(char *str1, char *str2, uint32_t s1, uint32_t s2, struct 
                 Insers_tmp[n_ins_tmp].targetChar = char2basepair(str1[i-1]);
                 Insers_tmp[n_ins_tmp].pos = i - 1;
                 n_ins_tmp++;
-                assert(isalpha(str1[i-1]));
+                if (VERIFY) assert(isalpha(str1[i-1]));
                 i--;
                 break;
               }

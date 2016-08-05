@@ -9,7 +9,7 @@
 
 #include "read_compression.h"
 #define DEBUG false
-#define VERIFY true
+#define VERIFY false
 
 
 /************************
@@ -291,7 +291,7 @@ uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char 
     uint32_t numDels = seq.n_dels;
 
     if (DEBUG) printf("snps %d, dels %d, ins %d\n", numSnps, numDels, numIns);
-    assert(numDels == numIns);
+    if (VERIFY) assert(numDels == numIns);
 
     compress_match(as, rs->match, 0, deltaP);
     
@@ -311,7 +311,7 @@ uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char 
     prev_pos = 0;
     
     for (i = 0; i < numDels; i++){
-        assert(prev_pos < rs->read_length);
+        if (VERIFY) assert(prev_pos < rs->read_length);
         Dels[i] = Dels[i] - prev_pos;
         compress_var(as, rs->var, Dels[i], prev_pos, flag);
         if (DEBUG) printf("Delete at offset %d, prev %d \n", Dels[i], prev_pos);

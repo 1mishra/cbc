@@ -11,7 +11,7 @@
 #include <stdint.h>
 
 #define DEBUG false
-#define VERIFY true
+#define VERIFY false
 //**************************************************************//
 //                                                              //
 //                  STORE REFERENCE IN MEMORY                   //
