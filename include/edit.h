@@ -23,4 +23,5 @@ uint32_t edit_dist(char *str1, char *str2, uint32_t s1, uint32_t s2);
 
 void reconstruct_read_from_ops(struct sequence *seq, char *ref, char *target, uint32_t len);
 uint32_t edit_sequence(char *str1, char *str2, uint32_t s1, uint32_t s2, struct sequence *seq);
+uint32_t smith_waterman_sequence(char *str1, char *str2, uint32_t s1, uint32_t s2, struct sequence *seq);
 #endif 

@@ -272,6 +272,7 @@ uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char 
     cumsumP = cumsumP + deltaP - 1;// DeltaP is 1-based
     
     uint32_t prev_pos = 0;
+    uint32_t delta = 0;
     
     
     //ALERTA AQUI y en su analogo descomp.: si pasamos por aqui no hacemos nada con el cigar... (arreglado ya?)
@@ -285,13 +286,12 @@ uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char 
     struct sequence seq;
     init_sequence(&seq, Dels, Insers, SNPs);
 
-    edit_sequence(read, &(reference[P-1]), rs->read_length, rs->read_length, &seq);
+    smith_waterman_sequence(read, &(reference[P-1]), rs->read_length, rs->read_length + rs->read_length / 2, &seq);
     uint32_t numIns = seq.n_ins;
     uint32_t numSnps = seq.n_snps;
     uint32_t numDels = seq.n_dels;
 
     if (DEBUG) printf("snps %d, dels %d, ins %d\n", numSnps, numDels, numIns);
-    if (VERIFY) assert(numDels == numIns);
 
     compress_match(as, rs->match, 0, deltaP);
     
@@ -306,7 +306,6 @@ uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char 
         compress_indels(as, rs->indels, numIns);
     }
 
-    
     // Store the positions and Chars in the corresponding vector
     prev_pos = 0;
     
@@ -326,11 +325,17 @@ uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char 
         if (DEBUG) printf("Insert %c at offset %d, prev_pos %d\n", basepair2char(Insers[i].targetChar), Insers[i].pos, prev_pos);
         prev_pos += Insers[i].pos;
     }
+    
 
     prev_pos = 0;
     for (i = 0; i < numSnps; i++){
         SNPs[i].pos = SNPs[i].pos - prev_pos;
-        compress_var(as, rs->var, SNPs[i].pos, prev_pos, flag); 
+        delta = compute_delta_to_first_snp(prev_pos + 1, rs->read_length);
+
+        delta = (delta << BITS_DELTA);
+        compress_var(as, rs->var, SNPs[i].pos, delta + prev_pos, flag); 
+        snpInRef[cumsumP - 1 + prev_pos + SNPs[i].pos] = 1;
+
         compress_chars(as, rs->chars, SNPs[i].refChar, SNPs[i].targetChar);
         if (DEBUG) printf("Replace %c with %c offset %d, prev_pos = %d\n", basepair2char(SNPs[i].refChar), basepair2char(SNPs[i].targetChar), SNPs[i].pos, prev_pos);
         prev_pos += SNPs[i].pos;

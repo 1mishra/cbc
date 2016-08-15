@@ -18,6 +18,12 @@
 
 static uint32_t const EDITS = 3;
 
+
+struct entry {
+  int32_t value;
+  enum {DIAGONAL, LEFT, UP, NONE} backpointer;
+};
+
 static uint32_t min_index(uint32_t *array, uint32_t size) {
   uint32_t min = UINT32_MAX;
   uint32_t index = 0;
@@ -30,11 +36,72 @@ static uint32_t min_index(uint32_t *array, uint32_t size) {
   return index;
 }
 
+static uint32_t max_index(int32_t *array, uint32_t size) {
+  int32_t max = INT32_MIN;
+  uint32_t index = 0;
+  for (uint32_t i = 0; i < size; i++) {
+    if (array[i] > max) {
+      max = array[i];
+      index = i;
+    }
+  }
+  return index;
+}
+
 void init_sequence(struct sequence *seq, uint32_t *Dels, struct ins *Insers, struct snp *SNPs) {
   seq->n_dels = 0, seq->n_ins = 0, seq->n_snps = 0;
   seq->Dels = Dels;
   seq->Insers = Insers;
   seq->SNPs = SNPs;
+}
+
+
+static uint32_t smith_waterman(char *str1, char *str2, uint32_t s1, uint32_t s2, struct entry matrix[s1+1][s2+1], uint32_t *i_max, uint32_t *j_max) {
+
+  for (uint32_t i = 0; i <= s1; i++) {
+    for (uint32_t j = 0; j <= s2; j++) {
+      struct entry ent;
+      ent.backpointer = NONE;
+      ent.value = 0;
+      if (i == 0) {
+        matrix[i][j] = ent;
+      } else if (j == 0) {
+        matrix[i][j] = ent;
+      } else if (str1[i-1] == str2[j-1]) {
+        ent.value = matrix[i-1][j-1].value + 1;
+        ent.backpointer = DIAGONAL;
+        matrix[i][j] = ent;
+      } else {
+        int32_t edits[4];
+        edits[0] = matrix[i-1][j-1].value - 1;
+        edits[1] = matrix[i-1][j].value - 1;
+        edits[2] = matrix[i][j-1].value - 1;
+        edits[3] = 0;
+        uint32_t index = max_index(edits, 4);
+        ent.value = edits[index];
+        switch (index) {
+          case 0:
+            ent.backpointer = DIAGONAL;
+            break;
+          case 1:
+            ent.backpointer = UP;
+            break;
+          case 2:
+            ent.backpointer = LEFT;
+            break;
+          case 3:
+            ent.backpointer = NONE;
+            break;
+        }
+        matrix[i][j] = ent;
+      }
+      if (matrix[i][j].value > matrix[*i_max][*j_max].value) {
+        *i_max = i;
+        *j_max = j;
+      }
+    }
+  }
+  return matrix[*i_max][*j_max].value;
 }
 
 static uint32_t edit_dist_helper(char *str1, char *str2, uint32_t s1, uint32_t s2, uint32_t matrix[s1+1][s2+1]) {
@@ -204,6 +271,82 @@ uint32_t edit_sequence(char *str1, char *str2, uint32_t s1, uint32_t s2, struct 
     if (DEBUG) printf("Ori: %.100s\nRef: %.100s\nAtt: %.100s\n", str2, str1, buf);
     if (DEBUG) printf("Distance between the reconstructed and ref: %d\n", edit_dist(str1, buf, s1, s1));
     if (DEBUG) printf("Computed dist: %d\n", (int) dist);
+  }
+
+  return dist;
+}
+
+uint32_t smith_waterman_sequence(char *str1, char *str2, uint32_t s1, uint32_t s2, struct sequence *seq) {
+
+  struct entry matrix[s1+1][s2+1];
+
+  uint32_t i = 0;
+  uint32_t j = 0;
+
+  uint32_t dist = smith_waterman(str1, str2, s1, s2, matrix, &i, &j);
+
+
+  uint32_t n_dels_tmp = 0, n_ins_tmp = 0, n_snps_tmp = 0; 
+  uint32_t Dels_tmp[max(s1,s2)];
+  struct ins Insers_tmp[max(s1, s2)];
+  struct snp SNPs_tmp[max(s1, s2)];
+
+  while (i != 0 && j != 0) {
+    if (matrix[i][j].backpointer == NONE) break;
+    switch (matrix[i][j].backpointer) {
+      case DIAGONAL: {
+                if (str1[i-1] != str2[j-1]) {
+                  SNPs_tmp[n_snps_tmp].targetChar = char2basepair(str1[i-1]);
+                  SNPs_tmp[n_snps_tmp].refChar = char2basepair(str2[j-1]);
+                  //printf("Replace %c with %c, Reference: %d, targetPos: %d\n", str2[j-1], str1[i-1], (j-1), (i-1));
+                  SNPs_tmp[n_snps_tmp].pos = i - 1;
+                  n_snps_tmp++;
+                }
+                i--;
+                j--;
+                break;
+              } 
+      case LEFT: {
+                Dels_tmp[n_dels_tmp] = j - 1;
+                n_dels_tmp++;
+                j--;
+                break;
+              }
+      case UP: {
+                Insers_tmp[n_ins_tmp].targetChar = char2basepair(str1[i-1]);
+                Insers_tmp[n_ins_tmp].pos = i - 1;
+                n_ins_tmp++;
+                if (VERIFY) assert(isalpha(str1[i-1]));
+                i--;
+                break;
+              }
+      default: 
+               break;
+    }
+  }
+
+  seq->n_dels = n_dels_tmp;
+  seq->n_ins = n_ins_tmp;
+  seq->n_snps = n_snps_tmp;
+  for (uint32_t i = 0; i < n_dels_tmp; i++) {
+    seq->Dels[i] = Dels_tmp[n_dels_tmp - i - 1];  
+  }
+  for (uint32_t i = 0; i < n_ins_tmp; i++) {
+    seq->Insers[i] = Insers_tmp[n_ins_tmp - i - 1];  
+  }
+  for (uint32_t i = 0; i < n_snps_tmp; i++) {
+    seq->SNPs[i] = SNPs_tmp[n_snps_tmp - i - 1];  
+  }
+  if (DEBUG) {
+    printf("snps %d, dels %d, ins %d\n", n_snps_tmp, n_dels_tmp, n_ins_tmp);
+  }
+
+
+  if (VERIFY || DEBUG) {
+    char buf[1024];
+    reconstruct_read_from_ops(seq, str2, buf, s2);
+    if (DEBUG) printf("Ref: %.15s\nTar: %.10s\nAtt: %.10s\n", str2, str1, buf);
+    //if (DEBUG) printf("Ori: %.150s\nRef: %.100s\nAtt: %.100s\n", str2, str1, buf);
   }
 
   return dist;

@@ -7,7 +7,7 @@ OBJ=$(SRC:.c=.o)
 CC=gcc
 RM=rm -f
 
-CFLAGS=-ffast-math -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -Wall -I../include -I/usr/local/include -I../libssh/build/src  -D__APPLE__ -std=gnu99 -pg
+CFLAGS=-O2 -ffast-math -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -Wall -I../include -I/usr/local/include -I../libssh/build/src  -D__APPLE__ -std=gnu99 
 LDFLAGS=-L/usr/local/lib -lc -lm -lpthread -L../libssh/build/src -lssh
 
 %.o : %.c

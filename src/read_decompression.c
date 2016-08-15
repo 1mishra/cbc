@@ -370,7 +370,7 @@ static void handle_insertions(char *ref, char *target, uint32_t *start_copy, int
 uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos, uint8_t invFlag, char *read, uint32_t readLen, uint8_t chr_change){
     
     unsigned int numIns = 0, numDels = 0, numSnps = 0, delPos = 0, ctrPos = 0, snpPos = 0, insPos = 0;
-    uint32_t currentPos = 0, prevIns = 0, prev_pos = 0, delta = 0, deltaPos = 0;
+    uint32_t prev_pos = 0, delta = 0, deltaPos = 0;
 
     
     uint32_t Dels[MAX_READ_LENGTH];
@@ -439,9 +439,7 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
         prev_pos += delPos;
     }
 
-
-    currentPos = 0;
-    
+    // Insertions
     prev_pos = 0;
     for (i = 0; i < numIns; i++){
         insPos = decompress_var(as, models->var, prev_pos, invFlag);
@@ -450,6 +448,7 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
         if (DEBUG) printf("Insert %c at offset: %d, prev_pos %d\n", basepair2char(Insers[i].targetChar), insPos, prev_pos);
         prev_pos += insPos;
     }
+
 
     uint32_t ins_pos = 0, dels_pos = 0;
     uint32_t start_copy = 0, ref_pos = 0;
@@ -463,12 +462,15 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
     // SNPS
 
     prev_pos = 0;
-    uint32_t ins_ctr = 0;
-    uint32_t dels_ctr = 0;
     for (i = 0; i < numSnps; i++) {
         
         if (VERIFY) assert(prev_pos <= models->read_length);
-        snpPos = decompress_var(as, models->var, prev_pos, invFlag);
+
+        delta = compute_delta_to_first_snp(prev_pos + 1, models->read_length);
+        delta = (delta << BITS_DELTA);
+
+        snpPos = decompress_var(as, models->var, delta + prev_pos, invFlag);
+        snpInRef[cumsumP - 1 + prev_pos + snpPos] = 1;
         SNPs[i].pos = prev_pos + snpPos;
 
         handle_insertions(&(reference[pos-1]), read, &start_copy, SNPs[i].pos, &ref_pos, Insers, &ins_pos, numIns, Dels, &dels_pos, numDels);
@@ -488,11 +490,8 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
     }
     handle_insertions(&(reference[pos-1]), read, &start_copy, models->read_length, &ref_pos, Insers, &ins_pos, numIns, Dels, &dels_pos, numDels);
 
-    //reconstruct_read_from_ops(&seq, &(reference[pos - 1]), read, models->read_length);
-
     fill_target(&(reference[pos - 1]), read, start_copy, models->read_length, &ref_pos, Dels, &dels_pos, numDels);
 
-    if (VERIFY) assert(ins_pos == dels_pos);
     if (invFlag == 0) returnVal = 0;
     else if (invFlag == 1) returnVal = 1;
     else returnVal = 2;
