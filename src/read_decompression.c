@@ -8,10 +8,11 @@
 
 #include "read_compression.h"
 #include <ctype.h>
-#include <stdint.h>
+#include <cinttypes>
 
 #define DEBUG false
 #define VERIFY false
+
 //**************************************************************//
 //                                                              //
 //                  STORE REFERENCE IN MEMORY                   //

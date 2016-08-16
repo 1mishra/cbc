@@ -42,7 +42,7 @@
 #define IDOFILE_PATH_ROOT "/tmp/idoFiles/idoFile."
 #endif
 
-int file_available;
+extern int file_available;
 
 struct remote_file_info{
     char host_name[1024];

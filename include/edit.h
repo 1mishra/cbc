@@ -6,6 +6,9 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include "sam_block.h"
+#include <assert.h>
+#include <ctype.h>
+#include <stdint.h>
 
 typedef enum {INSERT, REPLACE} edit;
 

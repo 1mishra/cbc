@@ -142,7 +142,7 @@ int scp_read(ssh_session session, char* directory)
         printf("Receiving file %s, size %llu, permisssions 0%o\n",
                filename, length, mode);
         
-        buffer = malloc(length);
+        buffer = (char *) malloc(length);
         if (buffer == NULL)
         {
             fprintf(stderr, "Memory allocation error\n");

@@ -13,8 +13,11 @@
 #include "sam_block.h"
 #include <inttypes.h>
 #include "edit.h"
+#include "id_compression.h"
+#include <cstdint>
+#include <limits>
 
-
+#define UINT32_MAX ((uint32_t) - 1)
 #define MAX_BP_CHR 300000000
 #define CHR_CHANGE_FLAG 0xffffffff
 #define END_GENOME_FLAG 0xfffffff0
@@ -25,10 +28,10 @@
 
 #define BITS_DELTA 7
 
-char *reference;
+extern char *reference;
 
-uint8_t snpInRef[MAX_BP_CHR];
-uint32_t cumsumP;
+extern uint8_t snpInRef[MAX_BP_CHR];
+extern uint32_t cumsumP;
 
 
 // Protorypes for the compression functions

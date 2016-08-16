@@ -8,15 +8,15 @@
 
 #include "sam_block.h"
 
-int char2basepair(char c)
+enum BASEPAIR char2basepair(char c)
 {
     switch(c)
     {
-        case 'A': return 0;
-        case 'C': return 1;
-        case 'G': return 2;
-        case 'T': return 3;
-        default: return 4;
+        case 'A': return A;
+        case 'C': return C;
+        case 'G': return G;
+        case 'T': return T;
+        default: return N;
     }
 }
 
@@ -563,7 +563,7 @@ read_models alloc_read_models_t(uint32_t read_length){
     
     uint32_t rescale = 1 << 20;
     
-    read_models rtn = calloc(1, sizeof(struct read_models_t));
+    read_models rtn = (read_models) calloc(1, sizeof(struct read_models_t));
     
     rtn->read_length = read_length;
     sprintf(rtn->_readLength, "%d", rtn->read_length);
@@ -592,7 +592,7 @@ id_models alloc_id_models_t(){
     
     uint32_t rescale = 1 << 20;
     
-    id_models rtn = calloc(1, sizeof(struct id_models_t));
+    id_models rtn = (id_models) calloc(1, sizeof(struct id_models_t));
     
     rtn->alpha_len = initialize_stream_model_id(rescale, MAX_NUMBER_TOKENS_ID, 256);
     rtn->alpha_value = initialize_stream_model_id(rescale, MAX_NUMBER_TOKENS_ID, 256);
@@ -612,7 +612,7 @@ rname_models alloc_rname_models_t(){
     
     uint32_t rescale = 1 << 20;
     
-    rname_models rtn = calloc(1, sizeof(struct rname_models_t));
+    rname_models rtn = (rname_models) calloc(1, sizeof(struct rname_models_t));
     
     rtn->same_ref = initialize_stream_model_id(rescale, 1, 2);
     rtn->rname = initialize_stream_model_id(rescale, 256, 256);
@@ -626,7 +626,7 @@ mapq_models alloc_mapq_models_t(){
     
     uint32_t rescale = 1 << 20;
     
-    mapq_models rtn = calloc(1, sizeof(struct mapq_models_t));
+    mapq_models rtn = (mapq_models) calloc(1, sizeof(struct mapq_models_t));
     
     rtn->mapq = initialize_stream_model_id(rescale, 256, 256);
     return rtn;
@@ -649,7 +649,7 @@ aux_models alloc_aux_models_t(){
     
     uint32_t rescale = 1 << 20;
     
-    aux_models rtn = calloc(1, sizeof(struct aux_models_t));
+    aux_models rtn = (aux_models) calloc(1, sizeof(struct aux_models_t));
     
     rtn->qAux = initialize_stream_model_id(rescale, 1, 256);
 
@@ -687,7 +687,7 @@ rnext_models alloc_rnext_models_t(){
     
     uint32_t rescale = 1 << 20;
     
-    rnext_models rtn = calloc(1, sizeof(struct rnext_models_t));
+    rnext_models rtn = (rnext_models) calloc(1, sizeof(struct rnext_models_t));
     
     rtn->same_ref = initialize_stream_model_id(rescale, 1, 3);
     rtn->rnext = initialize_stream_model_id(rescale, 256, 256);
@@ -701,7 +701,7 @@ pnext_models alloc_pnext_models_t(){
     
     uint32_t rescale = 1 << 20;
     
-    pnext_models rtn = calloc(1, sizeof(struct pnext_models_t));
+    pnext_models rtn = (pnext_models) calloc(1, sizeof(struct pnext_models_t));
     
     rtn->zero = initialize_stream_model_id(rescale, 1, 2);
     rtn->raw_pnext = initialize_stream_model_id(rescale, 4, 256);
@@ -719,7 +719,7 @@ tlen_models alloc_tlen_models_t(){
     
     uint32_t rescale = 1 << 23;
     
-    tlen_models rtn = calloc(1, sizeof(struct tlen_models_t));
+    tlen_models rtn = (tlen_models) calloc(1, sizeof(struct tlen_models_t));
     
     rtn->sign = initialize_stream_model_id(rescale, 1,3);
     rtn->zero = initialize_stream_model_id(rescale, 1,2);

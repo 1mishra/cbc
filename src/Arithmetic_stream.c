@@ -9,6 +9,7 @@
 
 #include "Arithmetic_stream.h"
 
+int file_available = 0;
 
 /************************************
  *

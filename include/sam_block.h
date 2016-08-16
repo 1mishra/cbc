@@ -353,7 +353,7 @@ typedef struct cigarIndels{
 
 // Function Prototypes
 
-int char2basepair(char c);
+enum BASEPAIR char2basepair(char c);
 int basepair2char(enum BASEPAIR c);
 char bp_complement(char c);
 

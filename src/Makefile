@@ -1,24 +1,22 @@
 # Makefile for building C programs
 
-SRC=main.c sam_models.c sam_file_allocation.c qv_codebook.c qv_compression.c read_compression.c read_decompression.c util.c well.c Arithmetic_stream.c stream_model.c pmf.c distortion.c quantizer.c sfio_ssh_session.c compression.c io_functions.c id_compression.c aux_compression.c edit.c
+OBJ=main.o sam_models.o sam_file_allocation.o qv_codebook.o qv_compression.o read_compression.o read_decompression.o util.o well.o Arithmetic_stream.o stream_model.o pmf.o distortion.o quantizer.o sfio_ssh_session.o compression.o io_functions.o id_compression.o aux_compression.o edit.o
 
-OBJ=$(SRC:.c=.o)
-
-CC=gcc
+CC=g++
 RM=rm -f
 
-CFLAGS=-O2 -ffast-math -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -Wall -I../include -I/usr/local/include -I../libssh/build/src  -D__APPLE__ -std=gnu99 
+CXXFLAGS=-O2 -ffast-math -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -Wall -I../include -I/usr/local/include -I../libssh/build/src  -D__APPLE__ -std=c++0x
 LDFLAGS=-L/usr/local/lib -lc -lm -lpthread -L../libssh/build/src -lssh
 
 %.o : %.c
-	$(CC) -gdwarf-2 -g $(CFLAGS) -c $< #he add -gdwarf-2 -g para poder debugear bien en XCode http://stackoverflow.com/questions/21132194/is-it-possible-to-debug-a-gcc-compiled-program-using-lldb-or-debug-a-clang-comp
+	$(CC) -gdwarf-2 -g $(CXXFLAGS) -c $< 
 
 all : program
 
 program : $(OBJ)
 	$(CC) $(OBJ) -o program $(LDFLAGS)
 
-debug : CFLAGS += -DDEBUG -ggdb
+debug : CXXFLAGS += -DDEBUG -ggdb
 debug : program
 
 clean :

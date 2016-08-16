@@ -117,7 +117,7 @@ void* compress(void *thread_info){
     clock_t begin;
     clock_t ticks;
     
-    uint32_t lineCtr = 0;
+    size_t lineCtr = 0;
     
     printf("Compressing...\n");
     begin = clock();
@@ -143,7 +143,7 @@ void* compress(void *thread_info){
     while (compress_line(as, samBlock, info.lossiness)) {
         ++lineCtr;
         if (lineCtr % 1000000 == 0) {
-          printf("[cbc] compressed %" PRIu32 " lines\n", lineCtr);
+          printf("[cbc] compressed %zu lines\n", lineCtr);
         }
     }
     // Load and compress the blocks

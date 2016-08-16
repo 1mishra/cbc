@@ -1,12 +1,11 @@
 #ifndef _PMF_H_
 #define _PMF_H_
 
-#include <stdint.h>
-
+#include <cstdint>
 #include "util.h"
 
 // Used to indicate a symbol not found during index lookup
-#define ALPHABET_SYMBOL_NOT_FOUND			UINT32_MAX
+#define ALPHABET_SYMBOL_NOT_FOUND		  ((uint32_t) -1)	
 
 #define ALPHABET_INDEX_SIZE_HINT			62
 
