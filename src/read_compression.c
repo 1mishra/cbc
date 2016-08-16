@@ -291,7 +291,7 @@ uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char 
     struct sequence seq;
     init_sequence(&seq, Dels, Insers, SNPs);
 
-    edit_sequence(read, &(reference[P-1]), rs->read_length, rs->read_length, &seq);
+    needleman_wunsch_sequence(read, &(reference[P-1]), rs->read_length, rs->read_length, seq);
     uint32_t numIns = seq.n_ins;
     uint32_t numSnps = seq.n_snps;
     uint32_t numDels = seq.n_dels;

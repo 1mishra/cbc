@@ -2,32 +2,32 @@
 #include "edit.h"
 #include <iostream>
 #include <vector>
+#include <iomanip>
 #include "sam_block.h"
 
 #define UINT32_MAX ((uint32_t) - 1)
 #define INT32_MIN (-0x7fffffff - 1)
-#define min(a,b) \
-  ({ __typeof__ (a) _a = (a); \
-   __typeof__ (b) _b = (b); \
-   _a < _b ? _a : _b; })
-
-#define max(a,b) \
-  ({ __typeof__ (a) _a = (a); \
-   __typeof__ (b) _b = (b); \
-   _a > _b ? _a : _b; })
-
-#define DEBUG false
-#define VERIFY false
+#define DEBUG true
+#define VERIFY false 
 
 using namespace std;
 
 static uint32_t const EDITS = 3;
 
-
 struct entry {
   int32_t value;
   enum {DIAGONAL, LEFT, UP, NONE} backpointer;
 };
+
+template <typename T>
+void print_matrix(vector<vector<T> > matrix) {
+  for (size_t i = 0; i < matrix.size(); i++) {
+    for (size_t j = 0; j < matrix[i].size(); j++) {
+      cout << setw(5) << setfill(' ') << matrix[i][j];
+    }
+    cout << '\n';
+  }
+}
 
 static uint32_t min_index(uint32_t *array, uint32_t size) {
   uint32_t min = UINT32_MAX;
@@ -41,10 +41,10 @@ static uint32_t min_index(uint32_t *array, uint32_t size) {
   return index;
 }
 
-static uint32_t max_index(int32_t *array, uint32_t size) {
+static uint32_t max_index(vector<int32_t> &array) {
   int32_t max = INT32_MIN;
   uint32_t index = 0;
-  for (uint32_t i = 0; i < size; i++) {
+  for (uint32_t i = 0; i < array.size(); i++) {
     if (array[i] > max) {
       max = array[i];
       index = i;
@@ -96,6 +96,11 @@ static void fill_target(char *ref, char *target, int prev_pos, int cur_pos, uint
   uint32_t ref_start = *ref_pos;
   if (prev_pos == cur_pos) {
     return;
+  }
+  while (*dels_pos < numDels && *ref_pos >= Dels[*dels_pos]) {
+    if (DEBUG) printf("DELETE %d\n", Dels[*dels_pos]);
+    (*ref_pos)++; 
+    (*dels_pos)++;
   }
   for (int i = prev_pos; i < cur_pos; i++) {
     target[i] = ref[*ref_pos];
@@ -235,62 +240,57 @@ uint32_t edit_sequence(char *str1, char *str2, uint32_t s1, uint32_t s2, struct 
   return dist;
 }
 
-/*
-static uint32_t glocal_align(char *str1, char *str2, uint32_t s1, uint32_t s2, struct entry matrix[s1+1][s2+1], uint32_t *i_max, uint32_t *j_max) {
+static int32_t substitution_score(char c1, char c2) {
+  if (c1 == c2) return 1;
+  return -1;
+}
 
+static int32_t needleman_wunsch(char *str1, char *str2, uint32_t s1, uint32_t s2, vector<vector<char> > &backpointers) {
+  vector<vector<int32_t> > matrix(s1 + 1, vector<int32_t>(s2 + 1));
   for (uint32_t i = 0; i <= s1; i++) {
     for (uint32_t j = 0; j <= s2; j++) {
-      struct entry ent;
-      ent.backpointer = NONE;
-      ent.value = 0;
       if (i == 0) {
-        matrix[i][j] = ent;
+        matrix[i][j] = -j; 
+        backpointers[i][j] = 'l';
       } else if (j == 0) {
-        matrix[i][j] = ent;
+        matrix[i][j] = -i;
+        backpointers[i][j] = 'u';
       } else {
-        int32_t edits[4];
-        bool match = str1[i-1] == str2[j-1];
-        edits[0] = (match) ? matrix[i-1][j-1].value + 1 : matrix[i-1][j-1].value - 1;
-        edits[1] = matrix[i-1][j].value - 2;
-        edits[2] = matrix[i][j-1].value - 2;
-        uint32_t index = max_index(edits, 3);
-        ent.value = edits[index];
-        if (index == 0) ent.backpointer = DIAGONAL;
-        else if (index == 1) ent.backpointer = UP;
-        else if (index == 2) ent.backpointer = LEFT;
-        matrix[i][j] = ent;
-      }
-      if (i == s1 && j >= s1 && matrix[i][j].value > matrix[*i_max][*j_max].value) {
-        *i_max = i;
-        *j_max = j;
+        vector<int32_t> values;
+        values.push_back(matrix[i-1][j-1] + substitution_score(str1[i], str2[j]));
+        values.push_back(matrix[i-1][j] - 1);
+        values.push_back(matrix[i][j-1] - 1);
+        uint32_t index = max_index(values);
+        matrix[i][j] = values[index];
+        if (index == 0) backpointers[i][j] = 'd';
+        else if (index == 1) backpointers[i][j] = 'u';
+        else backpointers[i][j] = 'l';
       }
     }
   }
-  return matrix[*i_max][*j_max].value;
+  return matrix[s1][s2];
 }
 
-uint32_t glocal_sequence(char *str1, char *str2, uint32_t s1, uint32_t s2, struct sequence *seq) {
+int32_t needleman_wunsch_sequence(char *str1, char *str2, uint32_t s1, uint32_t s2, struct sequence &seq) {
 
-  struct entry matrix[s1+1][s2+1];
-
-  uint32_t i = s1;
-  uint32_t j = s1;
-
-  uint32_t dist = glocal_align(str1, str2, s1, s2, matrix, &i, &j);
-  uint32_t i_copy = i;
-  uint32_t j_copy = j;
-  if (DEBUG) printf("i: %d, j: %d\n", i, j);
-
+  str1 = "CACAC";
+  str2 = "GCTAA";
+  s1 = 5;
+  s2 = 5;
+  vector<vector<char> > backpointers(s1 + 1, vector<char>(s2 + 1));
+  int32_t dist = needleman_wunsch(str1, str2, s1, s2, backpointers);
 
   uint32_t n_dels_tmp = 0, n_ins_tmp = 0, n_snps_tmp = 0; 
   uint32_t Dels_tmp[max(s1,s2)];
   struct ins Insers_tmp[max(s1, s2)];
   struct snp SNPs_tmp[max(s1, s2)];
 
-  while (i != 0 || j != 0) {
-    printf("%d, %d\n", i, j);
-    switch (matrix[i][j].backpointer) {
-      case DIAGONAL: {
+  uint32_t i = s1;
+  uint32_t j = s2;
+  while (!(i == 0 && j == 0)) {
+    char c = backpointers[i][j];
+    switch (c) {
+      case 'd': {
                 if (str1[i-1] != str2[j-1]) {
                   SNPs_tmp[n_snps_tmp].targetChar = char2basepair(str1[i-1]);
                   SNPs_tmp[n_snps_tmp].refChar = char2basepair(str2[j-1]);
@@ -302,13 +302,13 @@ uint32_t glocal_sequence(char *str1, char *str2, uint32_t s1, uint32_t s2, struc
                 j--;
                 break;
               } 
-      case LEFT: {
+      case 'l': {
                 Dels_tmp[n_dels_tmp] = j - 1;
                 n_dels_tmp++;
                 j--;
                 break;
               }
-      case UP: {
+      case 'u': {
                 Insers_tmp[n_ins_tmp].targetChar = char2basepair(str1[i-1]);
                 Insers_tmp[n_ins_tmp].pos = i - 1;
                 n_ins_tmp++;
@@ -316,38 +316,39 @@ uint32_t glocal_sequence(char *str1, char *str2, uint32_t s1, uint32_t s2, struc
                 i--;
                 break;
               }
-      default: 
-               printf("i: %d, j:%d\n", i, j);
     }
   }
-  assert(j == 0);
 
-  for (uint32_t k = 0; k < n_dels_tmp; k++) {
-    seq->Dels[k] = Dels_tmp[n_dels_tmp - k - 1];  
+  seq.n_dels = n_dels_tmp;
+  seq.n_ins = n_ins_tmp;
+  seq.n_snps = n_snps_tmp;
+  for (volatile uint32_t i = 0; i < n_dels_tmp; i++) {
+    seq.Dels[i] = Dels_tmp[n_dels_tmp - i - 1];  
   }
-  for (uint32_t k = 0; k < n_ins_tmp; k++) {
-    seq->Insers[k] = Insers_tmp[n_ins_tmp - k - 1];  
+  for (uint32_t i = 0; i < n_ins_tmp; i++) {
+    seq.Insers[i] = Insers_tmp[n_ins_tmp - i - 1];  
   }
-  for (uint32_t k = 0; k < n_snps_tmp; k++) {
-    seq->SNPs[k] = SNPs_tmp[n_snps_tmp - k - 1];  
+  for (uint32_t i = 0; i < n_snps_tmp; i++) {
+    seq.SNPs[i] = SNPs_tmp[n_snps_tmp - i - 1];  
   }
-
-  seq->n_dels = n_dels_tmp;
-  seq->n_ins = n_ins_tmp;
-  seq->n_snps = n_snps_tmp;
-
   if (DEBUG) {
     printf("snps %d, dels %d, ins %d\n", n_snps_tmp, n_dels_tmp, n_ins_tmp);
   }
 
-
   if (VERIFY || DEBUG) {
     char buf[1024];
-    reconstruct_read_from_ops(seq, str2, buf, s1);
-    if (DEBUG) printf("Ref: %.15s\nTar: %.5s\nAtt: %.5s\n", str2, str1, buf);
-    assert(edit_dist(str1, buf, s1, s1) == 0);
+    reconstruct_read_from_ops(&seq, str2, buf, s1);
+    if (edit_dist(str1, buf, s1, s1) > 0) {
+      cout << "Edit dist: " << edit_dist(str1, buf, s1, s1) << endl;
+      printf("Ref: %.100s\n", str2);
+      printf("Tar: %.100s\n", str1);
+      printf("Att: %.100s\n", buf);
+      assert(false);
+    }
+    if (DEBUG) printf("Ref: %.100s\nTar: %.100s\nAtt: %.100s\n", str2, str1, buf);
+    //if (DEBUG) printf("Distance between the reconstructed and ref: %d\n", edit_dist(str1, buf, s1, s1));
+    //if (DEBUG) printf("Computed dist: %d\n", (int) dist);
   }
 
   return dist;
-}*/
-
+}
