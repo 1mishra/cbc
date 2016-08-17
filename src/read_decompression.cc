@@ -9,10 +9,12 @@
 #include "read_compression.h"
 #include <ctype.h>
 #include <cinttypes>
+#include <iostream>
 
 #define DEBUG false
 #define VERIFY false
 
+using namespace std;
 //**************************************************************//
 //                                                              //
 //                  STORE REFERENCE IN MEMORY                   //
@@ -337,8 +339,10 @@ uint32_t argmin(uint32_t *arr, uint32_t len) {
 static void fill_target(char *ref, char *target, uint32_t prev_pos, uint32_t cur_pos, uint32_t *ref_pos, uint32_t *Dels, uint32_t *dels_pos, uint32_t numDels) {
 
   uint32_t ref_start = *ref_pos;
-  if (prev_pos == cur_pos) {
-    return;
+  while (*dels_pos < numDels && *ref_pos >= Dels[*dels_pos]) {
+    if (DEBUG) printf("DELETE %d\n", Dels[*dels_pos]);
+    (*ref_pos)++;
+    (*dels_pos)++;
   }
   for (int i = prev_pos; i < cur_pos; i++) {
     target[i] = ref[*ref_pos];
@@ -435,7 +439,7 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
     prev_pos = 0;
     for (ctrDels = 0; ctrDels < numDels; ctrDels++){
         delPos = decompress_var(as, models->var, prev_pos, invFlag);
-        if (DEBUG) printf("Delete ref at %d\n", delPos + prev_pos);
+        //if (DEBUG) printf("Delete ref at %d\n", delPos + prev_pos);
         Dels[ctrDels] = delPos + prev_pos;
         prev_pos += delPos;
     }
@@ -446,7 +450,7 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
         insPos = decompress_var(as, models->var, prev_pos, invFlag);
         Insers[i].pos = prev_pos + insPos;
         Insers[i].targetChar = char2basepair(decompress_chars(as, models->chars, O));
-        if (DEBUG) printf("Insert %c at offset: %d, prev_pos %d\n", basepair2char(Insers[i].targetChar), insPos, prev_pos);
+        //if (DEBUG) printf("Insert %c at offset: %d, prev_pos %d\n", basepair2char(Insers[i].targetChar), insPos, prev_pos);
         prev_pos += insPos;
     }
 

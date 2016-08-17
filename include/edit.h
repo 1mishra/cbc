@@ -9,6 +9,7 @@
 #include <assert.h>
 #include <ctype.h>
 #include <stdint.h>
+#include <vector>
 
 typedef enum {INSERT, REPLACE} edit;
 
@@ -21,10 +22,11 @@ struct sequence {
   uint32_t n_dels;
 };
 
+
 void init_sequence(struct sequence *seq, uint32_t *Dels, struct ins *Insers, struct snp *SNPs);
 uint32_t edit_dist(char *str1, char *str2, uint32_t s1, uint32_t s2);
 
 void reconstruct_read_from_ops(struct sequence *seq, char *ref, char *target, uint32_t len);
-uint32_t edit_sequence(char *str1, char *str2, uint32_t s1, uint32_t s2, struct sequence *seq);
+uint32_t edit_sequence(char *str1, char *str2, uint32_t s1, uint32_t s2, struct sequence &seq);
 int32_t needleman_wunsch_sequence(char *str1, char *str2, uint32_t s1, uint32_t s2, struct sequence &seq);
 #endif 
