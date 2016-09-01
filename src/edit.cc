@@ -7,9 +7,10 @@
 
 #define UINT32_MAX ((uint32_t) - 1)
 #define INT32_MIN (-0x7fffffff - 1)
+#define INT32_MAX (0x7fffffffL)
 #define DEBUG false
 #define VERIFY false
-#define STATS true
+#define STATS false
 
 using namespace std;
 
@@ -20,8 +21,7 @@ struct entry {
   int8_t direction;
 };
 
-vector<vector<struct entry> > matrix(200, vector<struct entry>(200));
-vector<vector<int32_t> > matrix_edits(200, vector<int32_t>(200));
+vector<vector<uint32_t> > matrix_edits(200, vector<uint32_t>(200));
 
 
 template <typename T>
@@ -82,7 +82,37 @@ static uint32_t edit_dist_helper(char *str1, char *str2, uint32_t s1, uint32_t s
       }
     }
   }
-  return matrix_edits[s1][s2];
+  return s2;
+}
+
+// returns the index of the min in the last row
+static uint32_t asymmetric_edit_dist_helper(char *str1, char *str2, uint32_t s1, uint32_t s2) {
+  uint32_t sub = 1;
+  uint32_t del = 1;
+  uint32_t ins = 1;
+  for (uint32_t i = 0; i <= s1; i++) {
+    matrix_edits[i][0] = i;
+  }
+  for (uint32_t j = 0; j <= s2; j++) {
+    matrix_edits[0][j] = j;
+  }
+  matrix_edits[0][0] = 0;
+  uint32_t index = 0;
+  uint32_t min_value = UINT32_MAX;
+  for (uint32_t i = 1; i <= s1; i++) {
+    for (uint32_t j = 1; j <= s2; j++) {
+      if (str1[i-1] == str2[j-1]) {
+        matrix_edits[i][j] = matrix_edits[i-1][j-1];
+      } else {
+        matrix_edits[i][j] = min(matrix_edits[i-1][j-1] + sub, min(matrix_edits[i-1][j] + ins, matrix_edits[i][j-1] + del));
+      }
+      if (i == s1 && matrix_edits[i][j] < min_value) {
+        min_value = matrix_edits[i][j];
+        index = j;
+      }
+    }
+  }
+  return index;
 }
 
 uint32_t edit_dist(char *str1, char *str2, uint32_t s1, uint32_t s2) {
@@ -162,15 +192,15 @@ void reconstruct_read_from_ops(struct sequence *seq, char *ref, char *target, ui
 // returns number of operations used 
 uint32_t edit_sequence(char *str1, char *str2, uint32_t s1, uint32_t s2, struct sequence &seq) {
 
-  edit_dist_helper(str1, str2, s1, s2);
+  uint32_t i = s1;
+  uint32_t j = asymmetric_edit_dist_helper(str1, str2, s1, s2);
 
+  if (DEBUG) cout << "min index: " << j << endl;
   uint32_t n_dels_tmp = 0, n_ins_tmp = 0, n_snps_tmp = 0; 
   uint32_t Dels_tmp[max(s1,s2)];
   struct ins Insers_tmp[max(s1, s2)];
   struct snp SNPs_tmp[max(s1, s2)];
 
-  uint32_t i = s1;
-  uint32_t j = s2;
   uint32_t dist = matrix_edits[i][j];
 
   while (i != 0 || j != 0) {
@@ -231,122 +261,9 @@ uint32_t edit_sequence(char *str1, char *str2, uint32_t s1, uint32_t s2, struct 
     reconstruct_read_from_ops(&seq, str2, buf, s1);
     //assert(edit_dist(str1, buf, s1, s1) == 0);
     if (DEBUG) printf("Ref: %.100s\nTar: %.100s\nAtt: %.100s\n", str2, str1, buf);
-    //if (DEBUG) printf("Distance between the reconstructed and ref: %d\n", edit_dist(str1, buf, s1, s1));
     //if (DEBUG) printf("Computed dist: %d\n", (int) dist);
   }
 
   return dist;
 }
 
-static inline int32_t substitution_score(char c1, char c2) {
-  if (c1 == c2) return 1;
-  return -1;
-}
-
-static int32_t needleman_wunsch(char *str1, char *str2, uint32_t s1, uint32_t s2) {
-  for (uint32_t i = 0; i <= s1; i++) {
-    for (uint32_t j = 0; j <= s2; j++) {
-      if (i == 0) {
-        matrix[i][j].value = -j; 
-        matrix[i][j].direction = -1;
-      } else if (j == 0) {
-        matrix[i][j].value = -i;
-        matrix[i][j].direction = 1;
-      } else {
-        vector<int32_t> values(3);
-        values[0] = matrix[i-1][j-1].value + ((str1[i-1] == str2[j-1]) ? 1 : -1);
-        values[1] = (matrix[i-1][j].value - 2);
-        if (i == s1 && j >= s1) {
-          values[2] = matrix[i][j-1].value;
-        } else {
-          values[2] = matrix[i][j-1].value - 2;
-        }
-        uint32_t index = max_index(values);
-        matrix[i][j].value = values[index];
-        if (index == 0) matrix[i][j].direction = 0;
-        else if (index == 1) matrix[i][j].direction = 1;
-        else matrix[i][j].direction = -1;
-      }
-    }
-  }
-  return matrix[s1][s2].value;
-}
-
-int32_t needleman_wunsch_sequence(char *str1, char *str2, uint32_t s1, uint32_t s2, struct sequence &seq) {
-
-
-  int32_t dist = needleman_wunsch(str1, str2, s1, s2);
-
-  uint32_t n_dels_tmp = 0, n_ins_tmp = 0, n_snps_tmp = 0; 
-  uint32_t Dels_tmp[max(s1,s2)];
-  struct ins Insers_tmp[max(s1, s2)];
-  struct snp SNPs_tmp[max(s1, s2)];
-
-  uint32_t i = s1;
-  uint32_t j = s2;
-  while (!(i == 0 && j == 0)) {
-    switch (matrix[i][j].direction) {
-      case 0: {
-                if (str1[i-1] != str2[j-1]) {
-                  SNPs_tmp[n_snps_tmp].targetChar = char2basepair(str1[i-1]);
-                  SNPs_tmp[n_snps_tmp].refChar = char2basepair(str2[j-1]);
-                  //printf("Replace %c with %c, Reference: %d, targetPos: %d\n", str2[j-1], str1[i-1], (j-1), (i-1));
-                  SNPs_tmp[n_snps_tmp].pos = i - 1;
-                  n_snps_tmp++;
-                }
-                i--;
-                j--;
-                break;
-              } 
-      case -1: {
-                if (!(i == s1 && j >= s1)) {
-                  Dels_tmp[n_dels_tmp] = j - 1;
-                  n_dels_tmp++;
-                }
-                j--;
-                break;
-              }
-      case 1: {
-                Insers_tmp[n_ins_tmp].targetChar = char2basepair(str1[i-1]);
-                Insers_tmp[n_ins_tmp].pos = i - 1;
-                n_ins_tmp++;
-                if (VERIFY) assert(isalpha(str1[i-1]));
-                i--;
-                break;
-              }
-    }
-  }
-
-  seq.n_dels = n_dels_tmp;
-  seq.n_ins = n_ins_tmp;
-  seq.n_snps = n_snps_tmp;
-  for (uint32_t i = 0; i < n_dels_tmp; i++) {
-    seq.Dels[i] = Dels_tmp[n_dels_tmp - i - 1];  
-  }
-  for (uint32_t i = 0; i < n_ins_tmp; i++) {
-    seq.Insers[i] = Insers_tmp[n_ins_tmp - i - 1];  
-  }
-  for (uint32_t i = 0; i < n_snps_tmp; i++) {
-    seq.SNPs[i] = SNPs_tmp[n_snps_tmp - i - 1];  
-  }
-  if (DEBUG || STATS) {
-    printf("%d %d %d\n", n_snps_tmp, n_dels_tmp, n_ins_tmp);
-  }
-
-  if (VERIFY || DEBUG) {
-    char buf[1024];
-    reconstruct_read_from_ops(&seq, str2, buf, s1);
-    if (edit_dist(str1, buf, s1, s1) > 0) {
-      cout << "Edit dist: " << edit_dist(str1, buf, s1, s1) << endl;
-      printf("Ref: %.100s\n", str2);
-      printf("Tar: %.100s\n", str1);
-      printf("Att: %.100s\n", buf);
-      assert(false);
-    }
-    if (DEBUG) printf("Ref: %.100s\nTar: %.100s\nAtt: %.100s\n", str2, str1, buf);
-    //if (DEBUG) printf("Distance between the reconstructed and ref: %d\n", edit_dist(str1, buf, s1, s1));
-    //if (DEBUG) printf("Computed dist: %d\n", (int) dist);
-  }
-
-  return dist;
-}

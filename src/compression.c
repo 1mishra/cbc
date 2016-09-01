@@ -142,9 +142,9 @@ void* compress(void *thread_info){
     
     while (compress_line(as, samBlock, info.lossiness)) {
         ++lineCtr;
-        if (lineCtr % 1000000 == 0) {
-          printf("[cbc] compressed %zu lines\n", lineCtr);
-        }
+        //if (lineCtr % 1000000 == 0) {
+        //  printf("[cbc] compressed %zu lines\n", lineCtr);
+        //}
     }
     // Load and compress the blocks
     //while(compress_block(as, samBlock)){
@@ -198,6 +198,8 @@ void* decompress(void *thread_info){
     // Decompress the blocks
     while(decompress_line(as, samBlock, info->lossiness)){
         //reset_QV_block(samBlock->QVs, DECOMPRESSION);
+        printf("Decompressed read %d\n", n);
+        fflush(stdout);
         n++;
     }
     
