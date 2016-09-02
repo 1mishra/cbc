@@ -1,2 +1,2 @@
 #!/bin/bash
-./bin/program -x compressed uncompressed ../dna/ce.fa 
+./bin/program -x compressed uncompressed ../dna/hs37d5_upper.fa

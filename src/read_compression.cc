@@ -9,7 +9,7 @@
 
 #include "read_compression.h"
 #include <iostream>
-#define DEBUG true
+#define DEBUG false
 #define VERIFY false
 
 using namespace std;
@@ -281,7 +281,6 @@ uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char 
     uint32_t prev_pos = 0;
     uint32_t delta = 0;
     
-    
     //ALERTA AQUI y en su analogo descomp.: si pasamos por aqui no hacemos nada con el cigar... (arreglado ya?)
     if(strcmp(edits, rs->_readLength) == 0){
         // The read matches perfectly.
@@ -295,11 +294,12 @@ uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char 
 
     uint32_t dist = edit_sequence(read, &(reference[P-1]), rs->read_length, rs->read_length, seq);
 
+    /*
     // The edit distance from the sam file may be wrong.
     if (dist == 0) {
       compress_match(as, rs->match, 1, deltaP);
       return cumsumP;
-    }
+    }*/
 
     uint32_t numIns = seq.n_ins;
     uint32_t numSnps = seq.n_snps;
