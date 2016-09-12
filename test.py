@@ -55,5 +55,7 @@ def compare(sam, uncompressed):
       print value
       print "Ref: " + x
       print "Att: " + y
+  print "Checked " + str(i) + " examples in total"
+
 
 compare(sys.argv[1], sys.argv[2])

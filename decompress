@@ -1,2 +1,2 @@
 #!/bin/bash
-./bin/program -x compressed uncompressed ../dna/hs37d5_upper.fa
+./bin/program -x compressed_test uncompressed_test ../dna/hs37d5_upper.fa

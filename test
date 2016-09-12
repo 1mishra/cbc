@@ -2,4 +2,4 @@
 ./compress
 ./decompress
 echo "Checking for differences" 
-python test.py ../dna/ERA242_sorted.sam uncompressed
+python test.py ../dna/ERA242_sorted.sam uncompressed_test
