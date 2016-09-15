@@ -33,6 +33,7 @@ void usage(const char *name) {
     printf("\t-u [rate]\t: Compress and Upload file to remote [output]\n");
     printf("\t-s [rate]\t: Stream file to remote [output]\n");
     printf("\t-D [M|L|A]\t: Optimize for MSE, Log(1+L1), L1 distortions, respectively (default: MSE)\n");
+    printf("\t-l\t\t: Variable length encoding\n"); 
     //printf("\t-c [#]\t\t: Compress using [#] clusters (default: 3)\n");
     //printf("\t-u [FILE]\t: Write the uncompressed lossy values to FILE (default: off)\n");
     printf("\t-h\t\t: Print this help\n");
@@ -74,6 +75,7 @@ int main(int argc, const char * argv[]) {
     opts.ratio = 1;
     opts.uncompressed = 0;
     opts.distortion = DISTORTION_MSE;
+    opts.var_length = 0;
     
     mode = COMPRESSION;
     
@@ -154,6 +156,10 @@ int main(int argc, const char * argv[]) {
             case 'h':
                 usage(argv[0]);
                 exit(0);
+            case 'l':
+                opts.var_length = 1;
+                i += 1;
+                break;
             case 's':
                 opts.stats = 1;
                 i += 1;

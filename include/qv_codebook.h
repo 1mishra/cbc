@@ -39,6 +39,7 @@ struct qv_options_t {
     uint32_t training_period;
 	double ratio;		// Used for parameter to all modes
 	double e_dist;		// Expected distortion as calculated during optimization
+  uint8_t var_length;
 };
 
 /**

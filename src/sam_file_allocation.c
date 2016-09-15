@@ -23,10 +23,10 @@ void reset_QV_block(qv_block qvb, uint8_t direction){
 // devuelve la longitud del PRIMER read?
 // se asume que todos lso reads son de la misma longitud.
 
-uint32_t get_read_length(FILE *f){
+uint32_t get_read_length(FILE *f, uint8_t var_length){
     
     int ch, header_bytes = 0;
-    char buffer[2048]; // 2 KB buffer
+    char buffer[4096];
     
     // We use this opportunity to remove the headers
     // getc coge caracter, fgets coge 2048 o hasta salto linea.
@@ -40,12 +40,31 @@ uint32_t get_read_length(FILE *f){
     // rewind the file pointer to be at the beginning of the first read
     fseek(f, header_bytes, SEEK_SET);
     
-    // Extract the first read
-    fscanf(f, "%*s %*d %*s %*d %*d %*s %*s %*d %*d %s", buffer);
+    if (!var_length) { 
+      // Extract the first read
+      fscanf(f, "%*s %*d %*s %*d %*d %*s %*s %*d %*d %s", buffer);
+    } else {
+      uint32_t max_value = 0;
+      while (1) {
+        uint32_t value = fscanf(f, "%*s %*d %*s %*d %*d %*s %*s %*d %*d %s", buffer);
+        if (value != 1) break;
+        uint32_t length = (uint32_t) strlen(buffer);
+        if (length > max_value) {
+          max_value = length;
+        }
+        // read until end of line 
+        char c;
+        do {
+          c = getc(f);
+        } while (c != '\n' && c != EOF);
+        if (c == EOF) break;
+      }
+      fseek(f, header_bytes, SEEK_SET);
+      return max_value;
+    }
     
     // rewind the file pointer to be at the beginning of the first read
     fseek(f, header_bytes, SEEK_SET);
-    
     
     return (uint32_t)strlen(buffer);
     
@@ -339,7 +358,7 @@ sam_block alloc_sam_models(Arithmetic_stream as, FILE * fin, FILE *fref, struct 
     }
     else{
         // get the read length from input file and move file pointer after headers
-        sb->read_length = get_read_length(sb->fs);
+        sb->read_length = get_read_length(sb->fs, qv_opts->var_length);
         // write readLength directly to AS using the codebook model
         compress_int(as, sb->codebook_model, sb->read_length);
     }
