@@ -83,10 +83,6 @@ uint32_t decompress_read(Arithmetic_stream as, sam_block sb, uint8_t chr_change,
 
     reconstruct_read(as, models, tempP, invFlag, sline->read, readLen, sline->cigar);
     sline->read[readLen] = '\0';
-    printf("%s\n", sline->read);
-    for (uint32_t i = 0; i < readLen; i++) {
-        assert(sline->read[i] == 'A' || sline->read[i] == 'C' || sline->read[i] == 'G' || sline->read[i] == 'T' || sline->read[i] == 'N');
-    }
     return invFlag;
 }
 

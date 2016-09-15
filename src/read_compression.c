@@ -24,6 +24,7 @@ uint32_t compress_read(Arithmetic_stream as, read_models models, read_line samLi
     }
     // compress read length (assume int)
     uint32_t length = (uint32_t) strlen(samLine->read);
+    sprintf(models->_readLength, "%d", length);
     models->read_length = length;
     for (k=0;k<4;k++) {
         mask = 0xFF<<(k*8);
@@ -287,15 +288,7 @@ uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char 
 
     uint32_t prev_pos = 0;
 
-
-    uint8_t matches = 1;
-    for (uint32_t i = 0; i < rs->read_length; i++) {
-        if (read[i] != reference[P - 1 + i]) {
-            matches = 0;
-            break;
-        }
-    }
-    if(matches){
+    if(strcmp(edits, rs->_readLength) == 0){
         // The read matches perfectly.
         compress_match(as, rs->match, 1, deltaP);
         return cumsumP;
