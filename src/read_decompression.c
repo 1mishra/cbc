@@ -81,7 +81,7 @@ uint32_t decompress_read(Arithmetic_stream as, sam_block sb, uint8_t chr_change,
     invFlag = decompress_flag(as, models->flag, &sline->flag);
 
     reconstruct_read(as, models, tempP, invFlag, sline->read, readLen, sline->cigar);
-
+    sline->read[readLen] = '\0';
     return invFlag;
 }
 
@@ -371,6 +371,7 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
 
     // The read matches perfectly.
     match = decompress_match(as, models->match, deltaPos);
+    printf("match: %d\n", match);
 
     // cumsumP is equal to pos
     cumsumP = pos;
