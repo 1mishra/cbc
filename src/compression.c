@@ -36,6 +36,7 @@ int print_line(struct sam_line_t *sline, uint8_t print_mode, FILE *fs){
         default:
             break;
     }
+    printf("%s\n", sline->read);
     return 0;
 }
 
