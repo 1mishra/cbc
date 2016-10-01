@@ -1,2 +1,2 @@
 #!/bin/bash
-./bin/program ../mpeg/NA21144.chrom11/short.sam chrom11_compressed ../mpeg/NA21144.chrom11/hs37d5_11.fa
+./bin/program ../mpeg/ERP001960/NA12878_S1.sam 1960_12878_compressed ../mpeg/ERP001960/hg19.fa
