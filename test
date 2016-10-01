@@ -1,5 +1,5 @@
 #!/bin/bash
-./compress
-./decompress
+#./compress
+#./decompress
 echo "Checking for differences" 
-python test.py ../dna/ERA242_sorted.sam uncompressed_test
+python test.py ../mpeg/NA21144.chrom11/short.sam uncompressed

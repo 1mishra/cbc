@@ -289,7 +289,6 @@ uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char 
         break;
       }
     }
-
     if (matches) {
       compress_match(as, rs->match, 1, deltaP);
       return cumsumP;
