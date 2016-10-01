@@ -1,2 +1,2 @@
 #!/bin/bash
-./bin/program -x compressed_test uncompressed_test ../dna/hs37d5_upper.fa
+./bin/program -x chrom11_compressed uncompressed ../mpeg/NA21144.chrom11/hs37d5_11.fa

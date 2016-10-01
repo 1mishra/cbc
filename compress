@@ -1,2 +1,2 @@
 #!/bin/bash
-./bin/program ../dna/9827_2#49.sam 9827_compressed ../dna/hs37d5_upper.fa
+./bin/program ../mpeg/NA21144.chrom11/short.sam chrom11_compressed ../mpeg/NA21144.chrom11/hs37d5_11.fa
