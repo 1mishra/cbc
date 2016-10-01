@@ -287,8 +287,15 @@ uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char 
     uint8_t firstCase = 1;
 
     uint32_t prev_pos = 0;
-
-    if(strcmp(edits, rs->_readLength) == 0){
+    uint8_t matches = 1;
+    for (uint32_t i = 0; i < rs->read_length; i++) {
+        if (read[i] != reference[P-1 + i]) {
+            matches = 0;
+            break;
+        }
+    }
+    //if(strcmp(edits, rs->_readLength) == 0){
+    if (matches) {
         // The read matches perfectly.
         compress_match(as, rs->match, 1, deltaP);
         return cumsumP;
@@ -544,6 +551,7 @@ uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char 
     if (lastSnp != 0)
         add_snps_to_array(edits, SNPs, &numSnps, rs->read_length + 1, read);
 
+    //printf("snps, dels, ins: %d, %d, %d\n", numSnps, numDels, numIns);
 
     // Compress the edits
     if ((numDels | numIns) == 0) {

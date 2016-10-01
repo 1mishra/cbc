@@ -72,7 +72,6 @@ uint32_t decompress_read(Arithmetic_stream as, sam_block sb, uint8_t chr_change,
 	readLen = readLen | maskedReadVal<<(k*8);
     }
     sline->readLength = readLen;
-    printf("%d\n", readLen);
 
 
 
@@ -372,7 +371,6 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
 
     // The read matches perfectly.
     match = decompress_match(as, models->match, deltaPos);
-    printf("match: %d\n", match);
 
     // cumsumP is equal to pos
     cumsumP = pos;
