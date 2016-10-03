@@ -17,15 +17,32 @@
 int store_reference_in_memory(FILE* refFile){
     uint32_t letterCount, endoffile = 1;
     char header[1024];
+    char buf[1024];
     
     reference = (char *) malloc(MAX_BP_CHR*sizeof(char));
     
     // ******* Read and Store Reference****** //
     letterCount = 0;
     
-    // Remove the header
-    fgets(header, sizeof(header), refFile);
+    // Remove the first header
+    if (ftell(refFile) == 0) {
+      fgets(header, sizeof(header), refFile);
+    }
     
+    while (fgets(buf, 1024, refFile)) {
+      if (buf[0] == '>' || reference[0] == '@') {
+        endoffile = 0;
+        break;
+      }
+      int i;
+      for (i = 0; i < 1024; i++) {
+        if (buf[i] == '\n') break;
+        reference[letterCount] = toupper(buf[i]);
+        letterCount++;
+      }
+    }
+
+    /*
     while (fgets(&reference[letterCount], 1024, refFile))
     {
         
@@ -33,21 +50,23 @@ int store_reference_in_memory(FILE* refFile){
             endoffile = 0;
             break;
         }
-        
-        while (reference[letterCount++] != '\n' ) ;
+       
+        reference[letterCount] = toupper(reference[letterCount]);
+        while (reference[letterCount++] != '\n' ) { 
+          reference[letterCount] = toupper(reference[letterCount]);
+        }
         letterCount--;
         
-    }
+    }*/
         
     reference[letterCount] = '\0';
-    
-    reference = (char *) realloc(reference, letterCount);
+
+    reference = (char *) realloc(reference, letterCount + 1);
     
     if (endoffile)
         return END_GENOME_FLAG;
     
-    return letterCount;
-    
+    return letterCount;   
 }
 
 
