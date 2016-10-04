@@ -9,9 +9,9 @@ CXXFLAGS=-O3 -ffast-math -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -Wall -I../i
 LDFLAGS=-L/usr/local/lib -lc -lm -lpthread -L../libssh/build/src -lssh
 
 %.o : %.c
-	$(CC) -gdwarf-2 -g $(CXXFLAGS) -c $< 
+	$(CC) -gdwarf-2 $(CXXFLAGS) -c $< 
 %.o : %.cc
-	$(CC) -gdwarf-2 -g $(CXXFLAGS) -c $< 
+	$(CC) -gdwarf-2 $(CXXFLAGS) -c $< 
 
 
 all : program

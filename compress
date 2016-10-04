@@ -5,4 +5,12 @@ set -o xtrace
 #./bin/program ../mpeg/ERP001960/NA12878_S1.sam 1960_12878_compressed ../mpeg/ERP001960/hg19.fa
 
 
-./bin/program /john9/scr1/reglong/ERP002490/NA12877_S1.sam  /john9/scr1/reglong/ERP002490/12877_compressed /john9/scr1/reglong/ERP002490/hg19.fa
+#./bin/program /john9/scr1/reglong/ERP002490/NA12877_S1.sam  /john9/scr1/reglong/ERP002490/12877_compressed /john9/scr1/reglong/ERP002490/hg19.fa
+
+#./bin/program ../mpeg/RNAseq/K562_cytosol_LID8465_TopHat_v2.sam K562_compressed ../mpeg/RNAseq/hg19.fa
+
+#./bin/program /john9/scr1/reglong/ERP002490/error.sam /john9/scr1/reglong/ERP002490/error_compressed /john9/scr1/reglong/ERP002490/chr3
+#./bin/program /john7/scr1/reglong/ERP002490/NA12882_S1.sam /john7/scr1/reglong/ERP002490/12882_compressed /john7/scr1/reglong/ERP002490/hg19.fa
+#./bin/program /john8/scr1/reglong/ERP002490/NA12878_S1.sam /john8/scr1/reglong/ERP002490/12878_compressed /john7/scr1/reglong/ERP002490/hg19.fa
+
+./bin/program /john6/scr1/reglong/ERP001960/NA12879_S1.sam /john6/scr1/reglong/ERP001960/12879_compressed /john6/scr1/reglong/ERP001960/hg19.fa

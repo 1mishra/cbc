@@ -1,2 +1,3 @@
 #!/bin/bash
-./bin/program -x chrom11_compressed uncompressed ../mpeg/NA21144.chrom11/hs37d5_11.fa
+#./bin/program -x chrom11_compressed uncompressed ../mpeg/NA21144.chrom11/hs37d5_11.fa
+./bin/program -x K562_compressed uncompressed ../mpeg/RNAseq/hg19.fa
