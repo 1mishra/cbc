@@ -135,7 +135,6 @@ void* compress(void *thread_info){
     
     if (info.lossiness == LOSSY) {
         compress_int(as, samBlock->codebook_model, LOSSY);
-        initialize_qv_model(as, samBlock->QVs, COMPRESSION);
     }
     else
         compress_int(as, samBlock->codebook_model, LOSSLESS);
@@ -191,9 +190,6 @@ void* decompress(void *thread_info){
     
     // Start the decompression
     // initialize the QV model
-    if (info->lossiness == LOSSY) {
-        initialize_qv_model(as, samBlock->QVs, DECOMPRESSION);
-    }
     
     // Decompress the blocks
     while(decompress_line(as, samBlock, info->lossiness)){

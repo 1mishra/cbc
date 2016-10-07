@@ -1,3 +1,11 @@
 #!/bin/bash
 #./bin/program -x chrom11_compressed uncompressed ../mpeg/NA21144.chrom11/hs37d5_11.fa
-./bin/program -x K562_compressed uncompressed ../mpeg/RNAseq/hg19.fa
+#./bin/program -x K562_compressed uncompressed ../mpeg/RNAseq/hg19.fa
+#./bin/program -x /john8/scr1/reglong/ERP001960/12890_compressed /john8/scr1/reglong/ERP001960/12890_uncompressed /john8/scr1/reglong/ERP001960/hg19.fa
+#./bin/program -x /john8/scr1/reglong/ERP002490/12878_compressed /john8/scr1/reglong/ERP002490/12878_uncompressed /john8/scr1/reglong/ERP002490/hg19.fa
+
+#./bin/program -x /john7/scr1/reglong/ERP002490/12882_compressed /john7/scr1/reglong/ERP002490/12882_uncompressed /john7/scr1/reglong/ERP002490/hg19.fa
+#./bin/program -x /john6/scr1/reglong/ERP001960/12879_compressed /john6/scr1/reglong/ERP001960/12879_uncompressed /john6/scr1/reglong/ERP001960/hg19.fa
+#./bin/program -x /john8/scr1/reglong/ERP002490/12878_compressed /john8/scr1/reglong/ERP002490/12878_uncompressed /john8/scr1/reglong/ERP002490/hg19.fa
+./bin/program -x /john7/scr1/reglong/ERP001960/12878_compressed /john7/scr1/reglong/ERP001960/12878_uncompressed /john7/scr1/reglong/ERP001960/hg19.fa
+

@@ -13,19 +13,6 @@
 
 using namespace std;
 
-void reset_QV_block(qv_block qvb, uint8_t direction){
-    
-    //free_stream_model_qv(qvb->qlist, qvb->model);
-    free_cond_quantizer_list(qvb->qlist);
-    if (direction == COMPRESSION)
-        free_conditional_pmf_list(qvb->training_stats);
-    
-}
-
-
-// devuelve la longitud del PRIMER read?
-// se asume que todos lso reads son de la misma longitud.
-
 uint32_t get_read_length(FILE *f){
     
     int ch, header_bytes = 0;
@@ -233,94 +220,6 @@ read_block alloc_read_block_t(uint32_t read_length){
     return rf;
 }
 
-/**
- *
- */
-qv_block alloc_qv_block_t(struct qv_options_t *opts, uint32_t read_length){
-    
-    qv_block qv_info;
-    
-    symbol_t *sym_buffer;
-    
-    uint32_t i = 0;
-    
-    uint32_t rescale = 1 << 20;
-    
-    qv_info = (qv_block) calloc(1, sizeof(struct qv_block_t));
-    
-    qv_info->block_length = opts->training_size;
-    
-    qv_info->columns = read_length;
-    
-    // Allocate the QV alphabet and the distortion matrix
-    struct distortion_t *dist = generate_distortion_matrix(QV_ALPHABET_SIZE, opts->distortion);
-    struct alphabet_t *alphabet = alloc_alphabet(QV_ALPHABET_SIZE);
-    
-    sym_buffer = (symbol_t*) calloc(qv_info->block_length, qv_info->columns*sizeof(symbol_t));
-    
-    qv_info->qv_lines = (struct qv_line_t *) calloc(qv_info->block_length, sizeof(struct qv_line_t));
-    
-    // allocate the memory for each of the lines
-    for (i = 0; i < qv_info->block_length; i++) {
-        
-        //qv_info->qv_lines[i].data = (symbol_t*) calloc(qv_info->columns, sizeof(symbol_t));
-        qv_info->qv_lines[i].data = sym_buffer;
-        qv_info->qv_lines[i].columns = read_length;
-        sym_buffer += read_length;
-    }
-    
-    // set the alphabet and distortion
-    qv_info->alphabet = alphabet;
-    qv_info->dist = dist;
-    
-    qv_info->opts = opts;
-    
-    qv_info->model = alloc_stream_model_qv(read_length, QV_ALPHABET_SIZE + 1, rescale);
-    
-    return qv_info;
-    
-}
-
-/**
- *
- */
-simplified_qv_block alloc_simplified_qv_block_t(struct qv_options_t *opts, uint32_t read_length){
-    
-    simplified_qv_block qv_info;
-    
-    symbol_t *sym_buffer;
-    
-    uint32_t i = 0, input_alphabet_size = QV_ALPHABET_SIZE;
-    
-    uint32_t rescale = 1 << 20;
-    
-    qv_info = (simplified_qv_block) calloc(1, sizeof(struct qv_block_t));
-    
-    qv_info->block_length = MAX_LINES_PER_BLOCK;
-    
-    qv_info->columns = read_length;
-    
-    // Allocate the QV alphabet and the distortion matrix
-    sym_buffer = (symbol_t*) calloc(qv_info->block_length, qv_info->columns*sizeof(symbol_t));
-    
-    qv_info->qv_lines = (struct qv_line_t *) calloc(qv_info->block_length, sizeof(struct qv_line_t));
-    
-    // allocate the memory for each of the lines
-    for (i = 0; i < qv_info->block_length; i++) {
-        
-        //qv_info->qv_lines[i].data = (symbol_t*) calloc(qv_info->columns, sizeof(symbol_t));
-        qv_info->qv_lines[i].data = sym_buffer;
-        qv_info->qv_lines[i].columns = read_length;
-        sym_buffer += read_length;
-    }
-    
-    qv_info->model = alloc_stream_model_qv(read_length, input_alphabet_size, rescale);
-    
-    return qv_info;
-    
-}
-
-
 sam_block alloc_sam_models(Arithmetic_stream as, FILE * fin, FILE *fref, struct qv_options_t *qv_opts, uint8_t mode){
     
     uint32_t i = 0;
@@ -348,40 +247,10 @@ sam_block alloc_sam_models(Arithmetic_stream as, FILE * fin, FILE *fref, struct 
     }
     
     
-    // Allocate the memory for the three parts:
+    // Allocate the memory:
     
     //READS,
     sb->reads = alloc_read_block_t(sb->read_length);
-    
-    //QVs,
-    sb->QVs = alloc_qv_block_t(qv_opts, sb->read_length);
-    sb->QVs->codebook_model = sb->codebook_model;
-    //WELL random generator
-    memset(&(sb->QVs->well), 0, sizeof(struct well_state_t));
-    if (mode == DECOMPRESSION || mode == DOWNLOAD) {
-        for (i = 0; i < 32; ++i) {
-            sb->QVs->well.state[i] = decompress_int(as, sb->codebook_model);
-        }
-    }
-    else{
-        // Initialize WELL state vector with libc rand
-        srand((uint32_t) time(0));
-        for (i = 0; i < 32; ++i) {
-#ifndef DEBUG
-            sb->QVs->well.state[i] = rand();
-            // Write the initial WELL state vector to the file first (fixed size of 32 bytes)
-            compress_int(as, sb->codebook_model, sb->QVs->well.state[i]);
-#else
-            sb->QVs->well.state[i] = 0x55555555;
-            // Write the initial WELL state vector to the file first (fixed size of 32 bytes)
-            compress_int(as, sb->codebook_model, sb->QVs->well.state[i]);
-#endif
-        }
-    }
-    // Must start at zero
-    sb->QVs->well.n = 0;
-    
-    sb->QVs->fs = sb->fs;
     
     //IDs
     sb->IDs = alloc_id_block();
@@ -404,138 +273,10 @@ sam_block alloc_sam_models(Arithmetic_stream as, FILE * fin, FILE *fref, struct 
     //TLEN
     sb->tlen = alloc_tlen_block();
     
-    
-    
     return sb;
     
 }
 
-
-uint32_t load_sam_block(sam_block sb){ //NOT IN USE! load_sam_line.
-    
-    int32_t i = 0, j = 0;
-    read_line rline = NULL;
-    qv_line qvline = NULL;
-    
-    
-    char buffer[1024];
-    char *ptr;
-    char *ID_line;
-    char *rname_line;
-    
-    for (i = 0; i < sb->block_length; i++) {
-        
-        rline = &(sb->reads->lines[i]);
-        qvline = &(sb->QVs->qv_lines[i]);
-        ID_line = sb->IDs->IDs[i];
-        rname_line = sb->rnames->rnames[i];
-        
-        rline->read_length = sb->read_length;
-        qvline->columns = sb->read_length;
-        // Read compulsory fields
-        if (fgets(buffer, 1024, sb->fs)) {
-            // ID
-            ptr = strtok(buffer, "\t");
-            strcpy(ID_line, ptr);
-            // FLAG
-            ptr = strtok(NULL, "\t");
-            rline->invFlag = atoi(ptr);
-            // RNAME
-            ptr = strtok(NULL, "\t");
-            strcpy(rname_line, ptr);
-            // POS
-            ptr = strtok(NULL, "\t");
-            rline->pos = atoi(ptr);
-            // MAPQ
-            ptr = strtok(NULL, "\t");
-            // CIGAR
-            ptr = strtok(NULL, "\t");
-            strcpy(rline->cigar, ptr);
-            // RNEXT
-            ptr = strtok(NULL, "\t");
-            // PNEXT
-            ptr = strtok(NULL, "\t");
-            // TLEN
-            ptr = strtok(NULL, "\t");
-            // SEQ
-            ptr = strtok(NULL, "\t");
-            strcpy(rline->read, ptr);
-            // QUAL
-            ptr = strtok(NULL, "\t");
-            // Read the QVs and translate them to a 0-based scale
-            // Check if the read is inversed
-            if (rline->invFlag & 16) { // The read is inverted
-                for (j = sb->read_length - 1; j >= 0; j--) {
-                    qvline->data[j] = (*ptr) - 33, ptr++;
-                }
-            }
-            else{ // The read is not inversed
-                for (j = 0; j < sb->read_length; j++) {
-                    qvline->data[j] = (*ptr) - 33, ptr++;
-                }
-            }
-            // Read the AUX fields until end of line, and store the MD field
-            while( NULL != (ptr = strtok(NULL, "\t")) ){
-                // Do something
-                if (*ptr == 'M' && *(ptr+1) == 'D'){
-                    // skip MD:Z:
-                    ptr += 5;
-                    strcpy(rline->edits, ptr);
-                    break;
-                }
-                
-            }
-        }
-        else
-            break;
-       /* int ch = 0;
-        if (EOF!=fscanf(sb->fs, "%*s %"SCNu16" %*s %d %*d %s %*s %*d %*d %s", &(rline->invFlag), &(rline->pos), rline->cigar, rline->read)){
-          fgetc(sb->fs); //remove the \t
-            
-            // Read the QVs and translate them to a 0-based scale
-            // Check if the read is inversed
-            if (rline->invFlag & 16) { // The read is inversed
-                for (j = sb->read_length - 1; j >= 0; j--) {
-                    qvline->data[j] = fgetc(sb->fs) - 33;
-                }
-            }
-            else{ // The read is not inversed
-                for (j = 0; j < sb->read_length; j++) {
-                    qvline->data[j] = fgetc(sb->fs) - 33;
-                }
-            }
-         
-        
-            // Read the AUX fields until end of line, and store the MD field
-            while('\n'!=(ch=fgetc(sb->fs))){
-                // Do something
-                if (ch == 'M'){
-                    ch = fgetc(sb->fs);
-                    if (ch == 'D'){
-                        // Read :Z:
-                        fgetc(sb->fs);// :
-                        fgetc(sb->fs);// Z
-                        fgetc(sb->fs);// :
-                        fscanf(sb->fs, "%s", rline->edits);
-                    }
-                }
-                
-            }
-            
-        }
-        else
-            break;
-    */
-        
-    }
-
-    // Update the block length
-    sb->block_length = i;
-    sb->reads->block_length = i;
-    sb->QVs->block_length = i;
-    
-    return i;
-}
 
 uint32_t load_sam_line(sam_block sb){
     
@@ -543,110 +284,7 @@ uint32_t load_sam_line(sam_block sb){
     read_line rline = sb->reads->lines;
     qv_line qvline = sb->QVs->qv_lines;
     
-    
-    char buffer[1024];
-    char *ptr;
-    char *ID_line = *sb->IDs->IDs;
-    char *rname_line = *sb->rnames->rnames;
-    char *rnext = *sb->rnext->rnext;
-    
-    char **aux_fields = sb->aux->aux_str;
-
-    rline->read_length = sb->read_length;
-    qvline->columns = sb->read_length;
-    // Read compulsory fields
-    if (fgets(buffer, 1024, sb->fs)) {
-        // ID
-        ptr = strtok(buffer, "\t");
-        strcpy(ID_line, ptr);
-        // FLAG
-        ptr = strtok(NULL, "\t");
-        rline->invFlag = atoi(ptr);
-        // RNAME
-        ptr = strtok(NULL, "\t");
-        strcpy(rname_line, ptr);
-        // POS
-        ptr = strtok(NULL, "\t");
-        rline->pos = atoi(ptr);
-        // MAPQ
-        ptr = strtok(NULL, "\t");
-        *sb->mapq->mapq = atoi(ptr);
-        // CIGAR
-        ptr = strtok(NULL, "\t");
-        strcpy(rline->cigar, ptr);
-        // RNEXT
-        ptr = strtok(NULL, "\t");
-        strcpy(rnext, ptr);
-        // PNEXT
-        ptr = strtok(NULL, "\t");
-        *sb->pnext->pnext = atoi(ptr);
-        // TLEN
-        ptr = strtok(NULL, "\t");
-        *sb->tlen->tlen = atoi(ptr);
-        // SEQ
-        ptr = strtok(NULL, "\t");
-        strcpy(rline->read, ptr);
-        // QUAL
-        ptr = strtok(NULL, "\t");
-        // Read the QVs and translate them to a 0-based scale
-        // Check if the read is inversed
-        if (rline->invFlag & 16) { // The read is inverted
-            for (j = sb->read_length - 1; j >= 0; j--) {
-                qvline->data[j] = (*ptr) - 33, ptr++;
-            }
-        }
-        else{ // The read is not inversed
-            for (j = 0; j < sb->read_length; j++) {
-                qvline->data[j] = (*ptr) - 33, ptr++;
-            }
-        }
-        
-        
-        // Read the AUX fields until end of line, and store the MD field
-        int auxCnt = 0;
-        while( NULL != (ptr = strtok(NULL, "\t")) ){
-            //MD:_:_ is a special case
-            if (*ptr == 'M' && *(ptr+1) == 'D'){
-                // skip MD:Z:
-                ptr += 5;
-                strcpy(rline->edits, ptr);
-                //break;
-            } else {
-                strcpy(aux_fields[auxCnt], ptr);
-                auxCnt++;
-                //if we have reached the max. allowed aux fields, break.
-                if(auxCnt==MAX_AUX_FIELDS) break;
-            }
-        }
-        
-        //awful hack to check if the last field has a \n.
-        if(auxCnt!=0) if(aux_fields[auxCnt-1][strlen(aux_fields[auxCnt-1])-1]=='\n') aux_fields[auxCnt-1][strlen(aux_fields[auxCnt-1])-1]=0;
-        
-        sb->aux->aux_cnt = auxCnt;
-        
-        return 0;
-    }
-    else
-        return 1;
-}
-
-/**
- *
- *
- */
-uint32_t load_qv_training_block(qv_block QV){
-    
-    qv_line qvline = QV->qv_lines;
-    
-    int32_t j = 0, i = 0;
-    
-    long int oset = ftell(QV->fs);
-    
-    
-    char *ptr;
-    
-    uint32_t invFlag;
-    
+/*
     for (i = 0; i < QV->block_length; i++) {
         
         stringstream ss;
@@ -684,8 +322,77 @@ uint32_t load_qv_training_block(qv_block QV){
                 }
             }
         }
-    }
+    }*/
     
-    fseek(QV->fs, oset, SEEK_SET);
-    return 0;
+    char buffer[1024];
+    char *ptr;
+    char *ID_line = *sb->IDs->IDs;
+    char *rname_line = *sb->rnames->rnames;
+    char *rnext = *sb->rnext->rnext;
+    
+    char **aux_fields = sb->aux->aux_str;
+
+    rline->read_length = sb->read_length;
+    // Read compulsory fields
+    if (fgets(buffer, 1024, sb->fs)) {
+        // ID
+        ptr = strtok(buffer, "\t");
+        strcpy(ID_line, ptr);
+        // FLAG
+        ptr = strtok(NULL, "\t");
+        rline->invFlag = atoi(ptr);
+        // RNAME
+        ptr = strtok(NULL, "\t");
+        strcpy(rname_line, ptr);
+        // POS
+        ptr = strtok(NULL, "\t");
+        rline->pos = atoi(ptr);
+        // MAPQ
+        ptr = strtok(NULL, "\t");
+        *sb->mapq->mapq = atoi(ptr);
+        // CIGAR
+        ptr = strtok(NULL, "\t");
+        strcpy(rline->cigar, ptr);
+        // RNEXT
+        ptr = strtok(NULL, "\t");
+        strcpy(rnext, ptr);
+        // PNEXT
+        ptr = strtok(NULL, "\t");
+        *sb->pnext->pnext = atoi(ptr);
+        // TLEN
+        ptr = strtok(NULL, "\t");
+        *sb->tlen->tlen = atoi(ptr);
+        // SEQ
+        ptr = strtok(NULL, "\t");
+        strcpy(rline->read, ptr);
+        // QUAL
+        ptr = strtok(NULL, "\t");
+        
+        // Read the AUX fields until end of line, and store the MD field
+        int auxCnt = 0;
+        while( NULL != (ptr = strtok(NULL, "\t")) ){
+            //MD:_:_ is a special case
+            if (*ptr == 'M' && *(ptr+1) == 'D'){
+                // skip MD:Z:
+                ptr += 5;
+                strcpy(rline->edits, ptr);
+                //break;
+            } else {
+                strcpy(aux_fields[auxCnt], ptr);
+                auxCnt++;
+                //if we have reached the max. allowed aux fields, break.
+                if(auxCnt==MAX_AUX_FIELDS) break;
+            }
+        }
+        
+        //awful hack to check if the last field has a \n.
+        if(auxCnt!=0) if(aux_fields[auxCnt-1][strlen(aux_fields[auxCnt-1])-1]=='\n') aux_fields[auxCnt-1][strlen(aux_fields[auxCnt-1])-1]=0;
+        
+        sb->aux->aux_cnt = auxCnt;
+        
+        return 0;
+    }
+    else
+        return 1;
 }
+

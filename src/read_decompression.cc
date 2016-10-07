@@ -47,23 +47,6 @@ int store_reference_in_memory(FILE* refFile){
       }
     }
 
-    /*
-    while (fgets(&reference[letterCount], 1024, refFile))
-    {
-        
-        if(reference[letterCount] == '>' || reference[letterCount] == '@'){
-            endoffile = 0;
-            break;
-        }
-       
-        reference[letterCount] = toupper(reference[letterCount]);
-        while (reference[letterCount++] != '\n' ) { 
-          reference[letterCount] = toupper(reference[letterCount]);
-        }
-        letterCount--;
-        
-    }*/
-        
     reference[letterCount] = '\0';
 
     reference = (char *) realloc(reference, letterCount + 1);

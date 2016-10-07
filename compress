@@ -13,4 +13,4 @@ set -o xtrace
 #./bin/program /john7/scr1/reglong/ERP002490/NA12882_S1.sam /john7/scr1/reglong/ERP002490/12882_compressed /john7/scr1/reglong/ERP002490/hg19.fa
 #./bin/program /john8/scr1/reglong/ERP002490/NA12878_S1.sam /john8/scr1/reglong/ERP002490/12878_compressed /john7/scr1/reglong/ERP002490/hg19.fa
 
-./bin/program /john6/scr1/reglong/ERP001960/NA12879_S1.sam /john6/scr1/reglong/ERP001960/12879_compressed /john6/scr1/reglong/ERP001960/hg19.fa
+#./bin/program /john6/scr1/reglong/ERP001960/NA12879_S1.sam /john6/scr1/reglong/ERP001960/12879_compressed /john6/scr1/reglong/ERP001960/hg19.fa
