@@ -22,6 +22,9 @@ def process_sam(filename):
   for line in f:
     if line[0] == '@':
       continue
+    if int(fields[1]) & 4 == 4:
+        # unmapped read
+        continue
     fields = line.split()
     if 16 & int(fields[1]) > 0:
       reads.append(reverse_complement(fields[9].strip()))
