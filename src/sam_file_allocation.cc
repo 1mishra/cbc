@@ -14,10 +14,9 @@
 using namespace std;
 
 uint32_t get_read_length(FILE *f){
-    
     int ch, header_bytes = 0;
     char buffer[2048]; // 2 KB buffer
-    
+
     // We use this opportunity to remove the headers
     // getc coge caracter, fgets coge 2048 o hasta salto linea.
     // con esto simplemente calculamos los bytes de header (empiezan con @),
@@ -29,6 +28,8 @@ uint32_t get_read_length(FILE *f){
     
     // rewind the file pointer to be at the beginning of the first read
     fseek(f, header_bytes, SEEK_SET);
+
+    
     
     // Extract the first read
     fscanf(f, "%*s %*d %*s %*d %*d %*s %*s %*d %*d %s", buffer);
@@ -38,7 +39,9 @@ uint32_t get_read_length(FILE *f){
     
     
     return (uint32_t)strlen(buffer);
-    
+    /*
+    // bandaid fix to support variable length reads
+    return 300;*/
 }
 
 /**
