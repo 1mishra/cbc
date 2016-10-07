@@ -1,6 +1,6 @@
 # Makefile for building C programs
 
-OBJ=main.o sam_models.o sam_file_allocation.o qv_codebook.o read_compression.o read_decompression.o util.o well.o Arithmetic_stream.o stream_model.o pmf.o distortion.o quantizer.o sfio_ssh_session.o compression.o io_functions.o id_compression.o edit.o
+OBJ=main.o sam_models.o sam_file_allocation.o qv_codebook.o read_compression.o read_decompression.o util.o Arithmetic_stream.o stream_model.o pmf.o distortion.o quantizer.o sfio_ssh_session.o compression.o io_functions.o id_compression.o well.o edit.o
 
 CC=g++
 RM=rm -f
