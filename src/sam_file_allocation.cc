@@ -7,8 +7,11 @@
 //
 
 #include "sam_block.h"
+#include <sstream>
+#include <string>
+#include <iostream>
 
-
+using namespace std;
 
 void reset_QV_block(qv_block qvb, uint8_t direction){
     
@@ -640,53 +643,47 @@ uint32_t load_qv_training_block(qv_block QV){
     long int oset = ftell(QV->fs);
     
     
-    char buffer[1024];
     char *ptr;
     
     uint32_t invFlag;
     
     for (i = 0; i < QV->block_length; i++) {
         
-        // Read compulsory fields
-        if (fgets(buffer, 1024, QV->fs)) {
-            // ID
-            ptr = strtok(buffer, "\t");
-            // FLAG
-            ptr = strtok(NULL, "\t");
-            invFlag = atoi(ptr);
-            // RNAME
-            ptr = strtok(NULL, "\t");
-            // POS
-            ptr = strtok(NULL, "\t");
-            // MAPQ
-            ptr = strtok(NULL, "\t");
-            // CIGAR
-            ptr = strtok(NULL, "\t");
-            // RNEXT
-            ptr = strtok(NULL, "\t");
-            // PNEXT
-            ptr = strtok(NULL, "\t");
-            // TLEN
-            ptr = strtok(NULL, "\t");
-            // SEQ
-            ptr = strtok(NULL, "\t");
-            // QUAL
-            ptr = strtok(NULL, "\t");
-            // Read the QVs and translate them to a 0-based scale
-            // Check if the read is inversed
-            if (invFlag & 16) { // The read is inverted
-                for (j = QV->columns - 1; j >= 0; j--) {
-                    qvline[i].data[j] = (*ptr) - 33, ptr++;
+        stringstream ss;
+        char c;
+        while (1) {
+            c = fgetc(QV->fs);
+            if (c == EOF) return 1;
+            if (c == '\n') break;
+            ss << c;
+        }
+        
+        
+        size_t counter = 0;
+
+        string token;
+        while (getline(ss, token, '\t')) {
+            counter++;
+            // check flag
+            if (counter == 2) {
+            
+            // reached quality values 
+            } else if (counter == 11) {
+                if (invFlag & 16) { 
+                    // The read is inverted, so we should read the quality 
+                    // values backwards
+                    for (j = QV->columns - 1; j >= 0; j--) {
+                        qvline[i].data[j] = (*ptr) - 33, ptr++;
+                    }
                 }
-            }
-            else{ // The read is not inversed
+            } else { 
+                // The read is not inversed, so we should read the
+                // quality values normally (forward)
                 for (j = 0; j < QV->columns; j++) {
                     qvline[i].data[j] = (*ptr) - 33, ptr++;
                 }
             }
         }
-        else
-            return 1;
     }
     
     fseek(QV->fs, oset, SEEK_SET);

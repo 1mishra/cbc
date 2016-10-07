@@ -1,0 +1,32 @@
+id_compression.c:        compress_uint8t(as, models->same_ref[0], 0);
+id_compression.c:        compress_uint8t(as, models->same_ref[0], 1);
+id_compression.c:            compress_uint8t(as, models->rname[prevChar], *rname);
+id_compression.c:        compress_uint8t(as, models->rname[prevChar], 0);
+id_compression.c:    chr_change = decompress_uint8t(as, models->same_ref[0]);
+id_compression.c:        while ( (ch = decompress_uint8t(as, models->rname[prevChar])) ) {
+read_compression.cc:    sprintf(models->_readLength, "%d", length);
+read_compression.cc:    models->read_length = length;
+read_compression.cc:        maskedReadVal = (uint8_t)(models->read_length & mask)>>(k*8);
+read_compression.cc:        compress_uint8t(as, models->rlength[k], maskedReadVal);
+read_compression.cc:    PosDiff = compress_pos(as, models->pos, models->pos_alpha, samLine->pos, chr_change);
+read_compression.cc:    tempF = compress_flag(as, models->flag, samLine->invFlag);
+read_compression.cc:    //tempF = compress_flag(as, models->flag, 0);
+read_decompression.cc:        maskedReadVal = decompress_uint8t(as, models->rlength[k]);
+read_decompression.cc:    tempP = decompress_pos(as, models->pos, models->pos_alpha, chr_change, &sline->pos);
+read_decompression.cc:    invFlag = decompress_flag(as, models->flag, &sline->flag);
+read_decompression.cc:    read[models->read_length] = '\0';
+read_decompression.cc:    match = decompress_match(as, models->match, deltaPos);
+read_decompression.cc:      for (ctrPos=0; ctrPos<models->read_length; ctrPos++)
+read_decompression.cc:        numSnps = decompress_snps(as, models->snps);
+read_decompression.cc:            numSnps = decompress_indels(as, models->indels);
+read_decompression.cc:            numDels = decompress_indels(as, models->indels);
+read_decompression.cc:            numIns = decompress_indels(as, models->indels);
+read_decompression.cc:        delPos = decompress_var(as, models->var, prev_pos, invFlag);
+read_decompression.cc:        insPos = decompress_var(as, models->var, prev_pos, invFlag);
+read_decompression.cc:        Insers[i].targetChar = char2basepair(decompress_chars(as, models->chars, O));
+read_decompression.cc:        if (VERIFY) assert(prev_pos <= models->read_length);
+read_decompression.cc:        delta = compute_delta_to_first_snp(prev_pos + 1, models->read_length);
+read_decompression.cc:        snpPos = decompress_var(as, models->var, delta + prev_pos, invFlag);
+read_decompression.cc:        SNPs[i].targetChar = char2basepair(decompress_chars(as, models->chars, refbp));
+read_decompression.cc:    handle_insertions(&(reference[pos-1]), read, &start_copy, models->read_length, &ref_pos, Insers, &ins_pos, numIns, Dels, &dels_pos, numDels);
+read_decompression.cc:    fill_target(&(reference[pos - 1]), read, start_copy, models->read_length, &ref_pos, Dels, &dels_pos, numDels);
