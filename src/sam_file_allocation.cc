@@ -38,10 +38,9 @@ uint32_t get_read_length(FILE *f){
     fseek(f, header_bytes, SEEK_SET);
     
     
-    return (uint32_t)strlen(buffer);
-    /*
+//    return (uint32_t)strlen(buffer);
     // bandaid fix to support variable length reads
-    return 300;*/
+    return 300;
 }
 
 /**

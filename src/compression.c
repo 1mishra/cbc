@@ -145,12 +145,6 @@ void* compress(void *thread_info){
           printf("[cbc] compressed %zu lines\n", lineCtr);
         }
     }
-    // Load and compress the blocks
-    //while(compress_block(as, samBlock)){
-    //    reset_QV_block(samBlock->QVs, info.mode);
-    
-    //   n += samBlock->block_length;
-    //}
     
     // Check if we are in the last block
     compress_rname(as, samBlock->rnames->models, "\n");
@@ -169,7 +163,6 @@ void* compress(void *thread_info){
     
     printf("Compression took %f\n", ((float)ticks)/CLOCKS_PER_SEC);
     
-    //pthread_exit(NULL);
     return NULL;
 }
 

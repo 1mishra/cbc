@@ -31,6 +31,10 @@ uint32_t compress_read(Arithmetic_stream as, read_models models, read_line samLi
 //        assert(strcmp("*", samLine->cigar) == 0);
         return 1;
     }
+
+    uint32_t length = (uint32_t) strlen(samLine->read);
+    sprintf(models->_readLength, "%d", length);
+    models->read_length = length;
     // compress read length (assume int)
     for (k=0;k<4;k++) {
         mask = 0xFF<<(k*8);

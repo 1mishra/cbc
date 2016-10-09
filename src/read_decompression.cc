@@ -78,6 +78,7 @@ uint32_t decompress_read(Arithmetic_stream as, sam_block sb, uint8_t chr_change,
         readLen = readLen | maskedReadVal<<(k*8);
     }
     
+    sline->readLength = readLen;
     // Decompress the read
     tempP = decompress_pos(as, models->pos, models->pos_alpha, chr_change, &sline->pos);
     
@@ -376,7 +377,7 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
     
     enum BASEPAIR refbp;
     
-    read[models->read_length] = '\0';
+    read[readLen] = '\0';
     // reset prevPos if the chromosome changed
     if (chr_change == 1) {
       prevPos = 0;
@@ -396,7 +397,7 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
     
     // If there is a match, reconstruct the read
     if (match) {
-      for (ctrPos=0; ctrPos<models->read_length; ctrPos++)
+      for (ctrPos=0; ctrPos<readLen; ctrPos++)
         read[readCtr++] = reference[pos + ctrPos - 1];
       return 1;
     }
@@ -452,9 +453,9 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
     prev_pos = 0;
     for (i = 0; i < numSnps; i++) {
         
-        if (VERIFY) assert(prev_pos <= models->read_length);
+        if (VERIFY) assert(prev_pos <= readLen);
 
-        delta = compute_delta_to_first_snp(prev_pos + 1, models->read_length);
+        delta = compute_delta_to_first_snp(prev_pos + 1, readLen);
         delta = (delta << BITS_DELTA);
 
         snpPos = decompress_var(as, models->var, delta + prev_pos, invFlag);
@@ -476,9 +477,10 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
 
 
     }
-    handle_insertions(&(reference[pos-1]), read, &start_copy, models->read_length, &ref_pos, Insers, &ins_pos, numIns, Dels, &dels_pos, numDels);
+    handle_insertions(&(reference[pos-1]), read, &start_copy, readLen, &ref_pos, Insers, &ins_pos, numIns, Dels, &dels_pos, numDels);
 
-    fill_target(&(reference[pos - 1]), read, start_copy, models->read_length, &ref_pos, Dels, &dels_pos, numDels);
+    fill_target(&(reference[pos - 1]), read, start_copy, readLen, &ref_pos, Dels, &dels_pos, numDels);
+    read[readLen] = '\0';
 
     if (invFlag == 0) returnVal = 0;
     else if (invFlag == 1) returnVal = 1;
