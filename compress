@@ -15,4 +15,10 @@ set -o xtrace
 
 #./bin/program /john6/scr1/reglong/ERP001960/NA12879_S1.sam /john6/scr1/reglong/ERP001960/12879_compressed /john6/scr1/reglong/ERP001960/hg19.fa
 
-./bin/program ../mpeg/9827.sam 9827_compressed ../mpeg/hs37d5.fa
+#./bin/program ../mpeg/9827.sam 9827_compressed ../mpeg/hs37d5.fa
+#./bin/program ../mpeg/17/9799.sam ../mpeg/17/9799_compressed.sam ../mpeg/17/ecolik12.fa
+#./bin/program ../mpeg/DH10B/MiSeq_Ecoli_DH10B_110721_PF.sam ../mpeg/DH10B/MiSeq_compressed ../mpeg/DH10B/EcoliDH10B.fa
+
+./bin/program /john6/scr1/reglong/ERP001960/NA12877_S1.sam /john6/scr1/reglong/ERP001960/1960_12877_compressed /john6/scr1/reglong/ERP001960/hg19.fa
+
+#./bin/program ../mpeg/NA21144.chrom11/NA21144.chrom11.ILLUMINA.bwa.GIH.low_coverage.20130415.sam ../mpeg/NA21144.chrom11/chrom11_compressed ../mpeg/NA21144.chrom11/hs37d5_11.fa
