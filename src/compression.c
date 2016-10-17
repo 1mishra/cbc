@@ -30,8 +30,15 @@ int print_line(struct sam_line_t *sline, uint8_t print_mode, FILE *fs){
             fprintf(fs, "%d\t", sline->pnext);
             fprintf(fs, "%d\t", sline->tlen);
             fprintf(fs, "%s\t", sline->read);
-            /* fprintf(fs, "%s\t", sline->quals); */
-            fprintf(fs, "%s", sline->aux);
+            // need to re-reverse quality scores
+            if ((sline->flag & 16) == 16) {
+                for (i = sline->readLength - 1; i >= 0; --i)
+                    fputc(sline->quals[i], fs);
+                fputc('\t', fs);
+            } else {
+                fprintf(fs, "%s\t", sline->quals);
+            }
+            fprintf(fs, "%s", sline->aux);  
             fputc('\n', fs); 
             break;
             
@@ -82,11 +89,10 @@ int compress_line(Arithmetic_stream as, sam_block samBlock, uint8_t lossiness)  
 
     compress_aux(as, samBlock->aux->models, samBlock->aux->aux_str, samBlock->aux->aux_cnt, samBlock->aux);
 
-    /*
     if (lossiness == LOSSY)
         QVs_compress(as, samBlock->QVs, samBlock->QVs->qArray);
     else
-        QVs_compress_lossless(as, samBlock->QVs->model, samBlock->QVs->qv_lines);*/
+        QVs_compress_lossless(as, samBlock->QVs->model, samBlock->QVs->qv_lines);
     return 1;
 }
 
@@ -139,12 +145,11 @@ int decompress_line(Arithmetic_stream as, sam_block samBlock, uint8_t lossiness)
     decompress_pnext(as, samBlock->pnext->models, sline.pos, sline.tlen, samBlock->read_length, &sline.pnext, sline.rnext[0] != '=', NULL);
 
     decompress_aux(as, samBlock->aux, sline.aux);
-    /*
     if (lossiness == LOSSY) {
             QVs_decompress(as, samBlock->QVs, decompression_flag, sline.quals);
     }
     else
-        QVs_decompress_lossless(as, samBlock->QVs, decompression_flag, sline.quals);*/
+        QVs_decompress_lossless(as, samBlock->QVs, decompression_flag, sline.quals);
     print_line(&sline, 0, samBlock->fs);
     
     return 1;
