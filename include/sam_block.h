@@ -356,6 +356,7 @@ typedef struct cigarIndels{
 enum BASEPAIR char2basepair(char c);
 int basepair2char(enum BASEPAIR c);
 char bp_complement(char c);
+enum token_type uint8t2token(uint8_t tok);
 
 stream_model *initialize_stream_model_flag(uint32_t rescale);
 stream_model* initialize_stream_model_pos(uint32_t rescale);

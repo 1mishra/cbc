@@ -44,6 +44,22 @@ char bp_complement(char c){
     }
 }
 
+enum token_type uint8t2token(uint8_t tok) {
+    switch(tok)
+    {
+        case 0: return ID_ALPHA;
+        case 1: return ID_DIGIT;
+        case 2: return ID_CHAR;
+        case 3: return ID_MATCH;
+        case 4: return ID_ZEROS;
+        case 5: return ID_DELTA;
+        case 6: return ID_END;
+
+    }
+    printf("uint8t2token error: Passed in invalid number\n");
+    assert(0);
+    return ID_END;
+}
 
 //////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                      //
