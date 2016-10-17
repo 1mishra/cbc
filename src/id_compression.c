@@ -43,7 +43,6 @@ int compress_rname(Arithmetic_stream as, rname_models models, char *rname){
     
     uint32_t ctr = 0;
     
-    printf("%s\n", rname);
     if(strcmp(rname, prev_name) == 0){
         
         compress_uint8t(as, models->same_ref[0], 0);
@@ -496,9 +495,9 @@ int decompress_rname(Arithmetic_stream as, rname_models models, char *rname){
             prevChar = ch;
             *rname = ch, rname++;
         }
+        *rname = '\0';
 
     }
-    *rname = '\0';
     
     return chr_change;
     
