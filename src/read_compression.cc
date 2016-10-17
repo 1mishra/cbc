@@ -275,6 +275,11 @@ uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char 
     ins Insers[MAX_READ_LENGTH];
     snp SNPs[MAX_READ_LENGTH];
 
+    char recCigar[MAX_CIGAR_LENGTH];
+
+    char *tmpcigar, *tmpEdits;
+    char *origCigar = cigar;
+
     // pos in the reference
     cumsumP = cumsumP + deltaP - 1;// DeltaP is 1-based
     
@@ -291,6 +296,12 @@ uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char 
     }
     if (matches) {
       compress_match(as, rs->match, 1, deltaP);
+
+      reconstructCigar(Dels, Insers, 0, 0, rs->read_length, recCigar);
+      *cigarFlags = 0;
+      if (strcmp(recCigar, origCigar) == 0) {
+        *cigarFlags = 1;
+      }
       return cumsumP;
     }
 
@@ -362,6 +373,13 @@ uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char 
         if (DEBUG) printf("Replace %c with %c offset %d, prev_pos = %d\n", basepair2char(SNPs[i].refChar), basepair2char(SNPs[i].targetChar), SNPs[i].pos, prev_pos);
         prev_pos += SNPs[i].pos;
     }
+
+    absolute_to_relative(Dels, numDels, Insers, numIns);
+    reconstructCigar(Dels, Insers, numDels, numIns, rs->read_length, recCigar);
+    *cigarFlags = 0;
+    if (strcmp(recCigar, origCigar) == 0) {
+        *cigarFlags = 1;
+    }
     return cumsumP;
     
 }
@@ -405,5 +423,24 @@ uint32_t compute_num_digits(uint32_t x){
         return 8;
     else
         return 9;
+
+}
+
+void absolute_to_relative(uint32_t *Dels, uint32_t numDels, ins *Insers, uint32_t numIns) {
+    // convert to relative
+    uint32_t prev_pos = 0;
+    uint32_t i;
+    for (i = 1; i < numDels; i++) {
+        Dels[i] = Dels[i] - prev_pos;
+        prev_pos += Dels[i]; 
+        Dels[i]--;
+    }
+    prev_pos = 0;
+    for (i = 1; i < numDels; i++) {
+        Insers[i].pos = Insers[i].pos - prev_pos;
+        prev_pos += Insers[i].pos; 
+        Insers[i].pos--;
+    }
+
 
 }

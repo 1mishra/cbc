@@ -57,6 +57,8 @@ uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char 
 int add_snps_to_array(char* edits, snp* SNPs, unsigned int *numSnps, unsigned int insertionPos, char *read);
 uint32_t compute_delta_to_first_snp(uint32_t prevPos, uint32_t readLen);
 
+void absolute_to_relative(uint32_t *Dels, uint32_t numDels, ins *Insers, uint32_t numIns);
+
 
 // Prototypes for tghe decompression functions
 uint32_t decompress_flag(Arithmetic_stream a, stream_model *F, uint32_t *flag);

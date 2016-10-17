@@ -88,6 +88,29 @@ uint32_t decompress_read(Arithmetic_stream as, sam_block sb, uint8_t chr_change,
     return invFlag;
 }
 
+uint32_t decompress_cigar(Arithmetic_stream as, sam_block sb, struct sam_line_t *sline)
+{
+    uint8_t cigarFlags;
+    int cigarCtr,cigarLen;
+
+    read_models models = sb->reads->models;
+
+
+    // Decompress cigarFlags
+    cigarFlags = decompress_uint8t(as,models->cigarFlags[0]);
+
+    if(cigarFlags==0) {
+        //The cigar is not the recCigar.
+        cigarLen = decompress_uint8t(as,models->cigar[0]);
+        for(cigarCtr = 0; cigarCtr<cigarLen; cigarCtr++)
+            sline->cigar[cigarCtr] = decompress_uint8t(as,models->cigar[0]);
+
+        sline->cigar[cigarCtr] = '\0';
+    }
+
+    return 1;
+}
+
 /***********************
  * Decompress the Flag
  **********************/
@@ -398,6 +421,7 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
     if (match) {
       for (ctrPos=0; ctrPos<models->read_length; ctrPos++)
         read[readCtr++] = reference[pos + ctrPos - 1];
+      reconstructCigar(Dels, Insers, 0, 0, readLen, recCigar);
       return 1;
     }
     // There is no match, retreive the edits
@@ -479,6 +503,9 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
     handle_insertions(&(reference[pos-1]), read, &start_copy, models->read_length, &ref_pos, Insers, &ins_pos, numIns, Dels, &dels_pos, numDels);
 
     fill_target(&(reference[pos - 1]), read, start_copy, models->read_length, &ref_pos, Dels, &dels_pos, numDels);
+
+    absolute_to_relative(Dels, numDels, Insers, numIns);
+    reconstructCigar(Dels, Insers, numDels, numIns, readLen, recCigar);
 
     if (invFlag == 0) returnVal = 0;
     else if (invFlag == 1) returnVal = 1;
