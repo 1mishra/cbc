@@ -438,6 +438,7 @@ int decompress_tlen(Arithmetic_stream as, tlen_models models, int32_t* tlen);
 
 int compress_aux(Arithmetic_stream as, aux_models models, char **aux_str, uint8_t aux_cnt, aux_block aux);
 int decompress_aux(Arithmetic_stream as, aux_block aux, char* finalLine);
+int compress_cigar(Arithmetic_stream as, read_models models, char *cigar, uint8_t cigarFlags);
 
 
 int compress_block(Arithmetic_stream as, sam_block samBlock);

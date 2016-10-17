@@ -63,8 +63,31 @@ int compress_line(Arithmetic_stream as, sam_block samBlock, uint8_t lossiness)  
         memset(snpInRef, 0, MAX_BP_CHR);
     }
     
+    //compress_id(as, samBlock->IDs->models, *samBlock->IDs->IDs);
+
+    //compress_mapq(as, samBlock->mapq->models, *samBlock->mapq->mapq);
+
+    //compress_rnext(as, samBlock->rnext->models, *samBlock->rnext->rnext);
+
     compress_read(as, samBlock->reads->models, samBlock->reads->lines, chr_change);
     
+    //compress_cigar(as, samBlock->reads->models, samBlock->reads->lines->cigar, samBlock->reads->lines->cigarFlags);
+
+
+    /*
+    compress_tlen(as, samBlock->tlen->models, *samBlock->tlen->tlen);
+
+    compress_pnext_raw(as, samBlock->pnext->models,  samBlock->reads->lines->pos, *samBlock->pnext->pnext);
+
+    compress_aux(as, samBlock->aux->models, samBlock->aux->aux_str, samBlock->aux->aux_cnt, samBlock->aux);
+
+    //compress_pnext(as, samBlock->pnext->models, samBlock->reads->lines->pos, *samBlock->tlen->tlen, *samBlock->pnext->pnext, (*samBlock->rnext->rnext[0] != '='), samBlock->reads->lines->cigar);
+
+    if (lossiness == LOSSY)
+        QVs_compress(as, samBlock->QVs, samBlock->QVs->qArray);
+    else
+        QVs_compress_lossless(as, samBlock->QVs->model, samBlock->QVs->qv_lines);*/
+
     return 1;
 }
 
@@ -101,11 +124,73 @@ int decompress_line(Arithmetic_stream as, sam_block samBlock, uint8_t lossiness)
         memset(snpInRef, 0, MAX_BP_CHR);
 
     }
-        
+/*
+    decompress_id(as, samBlock->IDs->models, sline.ID);
+
+    decompress_mapq(as, samBlock->mapq->models, &sline.mapq);
+
+    decompress_rnext(as, samBlock->rnext->models, sline.rnext); */
+
     decompression_flag = decompress_read(as,samBlock, chr_change, &sline);
     
+    /*
+    decompress_cigar(as, samBlock, &sline);
+
+    decompress_tlen(as, samBlock->tlen->models, &sline.tlen);
+
+    decompress_pnext(as, samBlock->pnext->models, sline.pos, sline.tlen, samBlock->read_length, &sline.pnext, sline.rnext[0] != '=', NULL);
+
+    decompress_aux(as, samBlock->aux, sline.aux);
+
+    if (lossiness == LOSSY) {
+            QVs_decompress(as, samBlock->QVs, decompression_flag, sline.quals);
+    }
+    else
+        QVs_decompress_lossless(as, samBlock->QVs, decompression_flag, sline.quals);*/
+
     print_line(&sline, 0, samBlock->fs);
     
+    return 1;
+}
+
+int compress_most_common_list(Arithmetic_stream as, aux_block aux)
+{
+    uint8_t n,i,l,k;
+
+    aux_models models = aux->models;
+    n = aux->most_common_size;
+    compress_uint8t(as,models->most_common_list[0],n);
+
+    for (i=0;i<n;i++) {
+        l = strlen(aux->most_common[i]);
+        compress_uint8t(as,models->most_common_list[0],l);
+        for(k=0;k<l;k++)
+            compress_uint8t(as,models->most_common_list[0],aux->most_common[i][k]);
+    }
+
+    return 1;
+}
+
+
+int decompress_most_common_list(Arithmetic_stream as, aux_block aux)
+{
+    uint8_t n,i,l,k;
+
+    aux_models models = aux->models;
+    n = decompress_uint8t(as,models->most_common_list[0]);
+
+    aux->most_common_size = n;
+
+    char buffer[256];
+    for (i=0;i<n;i++) {
+        l = decompress_uint8t(as,models->most_common_list[0]);
+        for(k=0;k<l;k++)
+            buffer[k]=decompress_uint8t(as,models->most_common_list[0]);
+        buffer[k]='\0';
+
+        strcpy(aux->most_common[i],buffer);
+        //printf("%d -> %s\n",i,aux->most_common[i]);
+    }
     return 1;
 }
 
@@ -132,6 +217,9 @@ void* compress(void *thread_info){
     // Allocs the different blocks and all the models for the Arithmetic
     sam_block samBlock = alloc_sam_models(as, info.fsam, info.fref, &opts, info.mode);
     
+    create_most_common_list(samBlock);
+
+    compress_most_common_list(as, samBlock->aux);
     
     if (info.lossiness == LOSSY) {
         compress_int(as, samBlock->codebook_model, LOSSY);
@@ -146,12 +234,6 @@ void* compress(void *thread_info){
           printf("[cbc] compressed %zu lines\n", lineCtr);
         }
     }
-    // Load and compress the blocks
-    //while(compress_block(as, samBlock)){
-    //    reset_QV_block(samBlock->QVs, info.mode);
-    
-    //   n += samBlock->block_length;
-    //}
     
     // Check if we are in the last block
     compress_rname(as, samBlock->rnames->models, "\n");
@@ -160,9 +242,6 @@ void* compress(void *thread_info){
     compress_file_size = encoder_last_step(as);
     
     printf("Final Size: %lld\n", compress_file_size);
-    //printf("%f Million reads compressed using %f MB.\n", (double)n/1000000.0, (double)compress_file_size/1000000.0);
-    
-    // free(samLine->cigar), free(samLine.edits), free(samLine.read_), free(samLine.identifier), free(samLine.refname);
     
     fclose(info.fsam);
     
@@ -187,6 +266,8 @@ void* decompress(void *thread_info){
     
     sam_block samBlock = alloc_sam_models(as, info->fsam, info->fref, info->qv_opts, DECOMPRESSION);
     
+    decompress_most_common_list(as, samBlock->aux);
+    
     info->lossiness = decompress_int(as, samBlock->codebook_model);
     
     // Start the decompression
@@ -197,22 +278,15 @@ void* decompress(void *thread_info){
     
     // Decompress the blocks
     while(decompress_line(as, samBlock, info->lossiness)){
-        //reset_QV_block(samBlock->QVs, DECOMPRESSION);
         n++;
     }
     
     n += samBlock->block_length;
     
-    //end the decompression
-    //compress_file_size = encoder_last_step(as);
     
     ticks = clock() - begin;
     
     printf("Decompression took %f\n", ((float)ticks)/CLOCKS_PER_SEC);
-    
-    //printf("%f Million reads decompressed.\n", (double)n/1000000.0);
-    
-    // free(samLine->cigar), free(samLine.edits), free(samLine.read_), free(samLine.identifier), free(samLine.refname);
     
     fclose(info->fsam);
     fclose(info->fref);

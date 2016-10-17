@@ -105,3 +105,242 @@ uint8_t inversePreprocessTagType(char byte1, char byte2, char *ptr)
     *(ptr+4)=':';
     return 0;
 }
+
+
+uint8_t create_most_common_list(sam_block sb) {
+    //MOST_COMMON_LIST_ANALIZED_FIELDS
+    //MOST_COMMON_LIST_SIZE
+    char list[MOST_COMMON_SEARCHLIST_SIZE+1][MAX_AUX_LENGTH] = {0};
+    int duplicates[MOST_COMMON_SEARCHLIST_SIZE+1][2] = {0};
+
+    long currentPosition;
+
+    float entropy = 0.0;
+    float prob;
+
+    char buffer[1024];
+    char *ptr;
+
+    int different_aux_fields_cnt = 0;
+    int total_analyzed_aux_fields_cnt = 0;
+    int i,j,n,tmpA,tmpB,ptrLen;
+    int appearFlag = 0;
+    int maxReachedFlag = 0;
+    int analyzedLines = 0;
+
+    //save file pointer to rewind it after analysis is done.
+    currentPosition = ftell(sb->fs);
+
+    while (fgets(buffer, 1024, sb->fs) && total_analyzed_aux_fields_cnt<MOST_COMMON_LIST_ANALIZED_FIELDS) {
+        ptr = strtok(buffer, "\t");
+
+        for(j=0;j<10;j++)
+            ptr = strtok(NULL, "\t");
+
+        while( NULL != (ptr = strtok(NULL, "\t")) ){
+
+            //check if end of line and delete it.
+            ptrLen = strlen(ptr);
+            if(ptr[ptrLen-1]=='\n') ptr[ptrLen-1] = 0;
+
+            //if (*ptr == 'M' && *(ptr+1) == 'D'){
+                // skip MD:Z: (special case)
+            //} else {
+                //Check if exists in list, otherwise add.
+                appearFlag = 0;
+                for (j=0;j<different_aux_fields_cnt;j++) {
+                    if( !strcmp(ptr, list[j]) ) {
+                        //Appears
+                        duplicates[j][0] = j;
+                        duplicates[j][1]++;
+                        appearFlag = 1;
+                        break;
+                    }
+                }
+
+                if(!appearFlag && different_aux_fields_cnt<MOST_COMMON_SEARCHLIST_SIZE) {
+                    //First appearance, add.
+                    strcpy(list[different_aux_fields_cnt],ptr);
+                    duplicates[different_aux_fields_cnt][0] = different_aux_fields_cnt;
+                    duplicates[different_aux_fields_cnt][1] = 1;
+
+                    different_aux_fields_cnt++;
+
+                }
+
+                total_analyzed_aux_fields_cnt++;
+            //}
+
+        }
+        analyzedLines++;
+
+        if(maxReachedFlag) break;
+    }
+
+
+
+    // Sort by no. of appearances
+    n = different_aux_fields_cnt;
+    for(i=0;i<n;i++)
+    {
+        for(j=0;j<n-i;j++)
+        {
+            if(duplicates[j][1]<duplicates[j+1][1])
+            {
+                tmpA=duplicates[j+1][1];
+                tmpB=duplicates[j+1][0];
+                duplicates[j+1][1]=duplicates[j][1];
+                duplicates[j+1][0]=duplicates[j][0];
+                duplicates[j][1]=tmpA;
+                duplicates[j][0]=tmpB;
+            }
+        }
+
+    }
+
+
+    //If there is a point in the ordered list from where all the fields have just 1 appearance we stop the list right here, as it makes no sense to save in the most common list something that appears just once (it would be bad for the compression).
+    for(i=0;i<n;i++)
+        if(duplicates[i][1]<=100) {
+            n = i; break;
+        }
+
+
+    //Copy the first MOST_COMMON_LIST_SIZE values into the list
+    if(n>MOST_COMMON_LIST_SIZE)
+        n=MOST_COMMON_LIST_SIZE;
+
+    sb->aux->most_common_size = n;
+
+    for (i=0;i<n;i++) {
+        strcpy(sb->aux->most_common[i],list[duplicates[i][0]]);
+        //prob = (float)duplicates[i][1]/total_analyzed_aux_fields_cnt;
+        //entropy += -prob*log2(prob);
+    }
+
+    //Return to original position (1st read)
+    fseek(sb->fs, currentPosition, SEEK_SET);
+
+
+    return 0;
+}
+
+//Finds if the aux_field is in the most common list. If so, returns the index, otherwise returns sb->aux->most_common_size.
+uint8_t get_most_common_token(char** list, uint32_t list_size, char* aux_field)
+{
+    uint8_t n = list_size;
+    uint8_t k;
+    uint8_t token = n;
+
+    for(k=0;k<n;k++)
+        if( !strcmp(list[k],aux_field) )
+        { token=k; break; }
+
+    return token;
+}
+
+
+
+
+// RECONSTRUCTING THE CIGAR AS A FUNCTION OF:
+// Dels[], Insers[], numDels, numIns, totalReadLength
+// (convertir en funcion)
+
+uint32_t reconstructCigar(uint32_t* Dels, ins* Insers, uint32_t numDels, uint32_t numIns, uint32_t totalReadLength, char* recCigar) {
+
+    cigarIndels cid[MAX_READ_LENGTH];
+    //int totalReadLength = 100; //This should be variable
+
+    int c=0,itI=0,itD=0,ci=0,cd=0,k=0,posD=0,posI=0,i=0;
+    int actM = 0;
+
+    //array w. pos,type,num for dels and ins, then sort array by pos.
+    while (itD<numDels) {
+        posD += Dels[itD];
+        k=1;
+        while(Dels[itD+k]==0 && (itD+k)<numDels) {
+            k++;
+        }
+        //printf("Pos: %d, Dels: %d\n",posD,k);
+        cid[c].pos = posD;
+        cid[c].num = k;
+        cid[c].letter = 'D';
+        itD+=k;
+        c++;
+    }
+
+    while (itI<numIns) {
+        posI += Insers[itI].pos;
+        k=1;
+        while(Insers[itI+k].pos==0 && (itI+k)<numIns) {
+            k++;
+        }
+        cid[c].pos = posI;
+        cid[c].num = k;
+        if(itI==0 && posI == 0)
+            cid[c].letter = 'S';
+            else
+                cid[c].letter = 'I';
+                itI+=k;
+                c++;
+    }
+
+    //sorting
+    uint32_t tmpPos, tmpNum;
+    int n,j,valM,valN;
+    char tmpLetter;
+    n = c-1;
+    for(i=0;i<n;i++)
+    {
+        for(j=0;j<n-i;j++)
+        {
+            if(cid[j].pos>cid[j+1].pos)
+            {
+                tmpPos    = cid[j+1].pos;
+                tmpNum    = cid[j+1].num;
+                tmpLetter = cid[j+1].letter;
+                cid[j+1].pos    = cid[j].pos;
+                cid[j+1].num    = cid[j].num;
+                cid[j+1].letter = cid[j].letter;
+                cid[j].pos    = tmpPos;
+                cid[j].num    = tmpNum;
+                cid[j].letter = tmpLetter;
+            }
+        }
+    }
+
+    for (i=0;i<MAX_CIGAR_LENGTH;i++)
+        recCigar[i]=0;
+
+    int chrCigarCnt = 0;
+
+    int totalCnt = 0;
+    for (i=0;i<c;i++) {
+        valM = 0;
+        valN = 0;
+
+        //Dels should not be added to the totalCnt as they are just 'absences'
+        if(cid[i].pos==0) {
+            sprintf(recCigar + strlen(recCigar),"%dS",cid[i].num);
+        } else {
+            if (i==0) valM = cid[i].pos;
+            else valM = cid[i].pos-cid[i-1].pos;
+            sprintf(recCigar + strlen(recCigar),"%dM",valM);
+            sprintf(recCigar + strlen(recCigar),"%d%c",cid[i].num,cid[i].letter);
+        }
+
+        if (cid[i].letter != 'D') valN = cid[i].num;
+            totalCnt += valN + valM;
+            }
+
+    if(totalCnt < totalReadLength)
+    sprintf(recCigar + strlen(recCigar),"%dM",totalReadLength-totalCnt);
+
+    if(recCigar[strlen(recCigar)-1]=='I')
+    recCigar[strlen(recCigar)-1] = 'S';
+
+    //printf("%s\n",recCigar);
+
+    //if(strcmp(recCigar,origCigar)!=0) printf("No match =( \n%s\n%s\n\n",origCigar,recCigar);
+    return 1;
+}
