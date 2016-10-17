@@ -18,7 +18,6 @@ int print_line(struct sam_line_t *sline, uint8_t print_mode, FILE *fs){
     
     int32_t i = 0;
     
-    printf("CIGAR: %s\n", sline->cigar);
     switch (print_mode) {
         case 0:
             fprintf(fs, "%s\t", sline->ID);
@@ -27,25 +26,11 @@ int print_line(struct sam_line_t *sline, uint8_t print_mode, FILE *fs){
             fprintf(fs, "%d\t", sline->pos);
             fprintf(fs, "%d\t", sline->mapq);
             fprintf(fs, "%s\t", sline->cigar);
-
-            //fprintf(fs, "%s\t", sline->rnext);
-            //fprintf(fs, "%d\t", sline->pnext);
-            //fprintf(fs, "%d\t", sline->tlen);
-            if ((sline->flag & 16) == 16) {
-
-                for (i = sline->readLength - 1; i >=0 ; --i)
-                    fputc(bp_complement(sline->read[i]), fs);
-                
-                fputc('\t', fs);
-
-                /*
-                for (i = sline->readLength - 1; i >= 0; --i)
-                    fputc(sline->quals[i], fs);*/
-            }
-            else{
-                fprintf(fs,"%s\t", sline->read);
-                //fprintf(fs,"%s\t", sline->quals);
-            }
+            fprintf(fs, "%s\t", sline->rnext);
+            fprintf(fs, "%d\t", sline->pnext);
+            fprintf(fs, "%d\t", sline->tlen);
+            fprintf(fs,"%s\t", sline->read);
+            fprintf(fs,"%s\t", sline->quals);
             fprintf(fs, "%s", sline->aux);
             fputc('\n', fs); 
             break;
@@ -91,19 +76,18 @@ int compress_line(Arithmetic_stream as, sam_block samBlock, uint8_t lossiness)  
     
     compress_cigar(as, samBlock->reads->models, samBlock->reads->lines->cigar, samBlock->reads->lines->cigarFlags);
 
-    /*
     compress_tlen(as, samBlock->tlen->models, *samBlock->tlen->tlen);
 
-    compress_pnext_raw(as, samBlock->pnext->models,  samBlock->reads->lines->pos, *samBlock->pnext->pnext);
+    //compress_pnext_raw(as, samBlock->pnext->models,  samBlock->reads->lines->pos, *samBlock->pnext->pnext);
 
     compress_aux(as, samBlock->aux->models, samBlock->aux->aux_str, samBlock->aux->aux_cnt, samBlock->aux);
 
-    compress_pnext(as, samBlock->pnext->models, samBlock->reads->lines->pos, *samBlock->tlen->tlen, *samBlock->pnext->pnext, (*samBlock->rnext->rnext[0] != '='), samBlock->reads->lines->cigar);
+    //compress_pnext(as, samBlock->pnext->models, samBlock->reads->lines->pos, *samBlock->tlen->tlen, *samBlock->pnext->pnext, (*samBlock->rnext->rnext[0] != '='), samBlock->reads->lines->cigar);
 
     if (lossiness == LOSSY)
         QVs_compress(as, samBlock->QVs, samBlock->QVs->qArray);
     else
-        QVs_compress_lossless(as, samBlock->QVs->model, samBlock->QVs->qv_lines);*/
+        QVs_compress_lossless(as, samBlock->QVs->model, samBlock->QVs->qv_lines);
     return 1;
 }
 
@@ -151,18 +135,16 @@ int decompress_line(Arithmetic_stream as, sam_block samBlock, uint8_t lossiness)
     
     decompress_cigar(as, samBlock, &sline);
 
-    /*
     decompress_tlen(as, samBlock->tlen->models, &sline.tlen);
-
-    decompress_pnext(as, samBlock->pnext->models, sline.pos, sline.tlen, samBlock->read_length, &sline.pnext, sline.rnext[0] != '=', NULL);
+    /*
+    decompress_pnext(as, samBlock->pnext->models, sline.pos, sline.tlen, samBlock->read_length, &sline.pnext, sline.rnext[0] != '=', NULL);*/
 
     decompress_aux(as, samBlock->aux, sline.aux);
-
     if (lossiness == LOSSY) {
             QVs_decompress(as, samBlock->QVs, decompression_flag, sline.quals);
     }
     else
-        QVs_decompress_lossless(as, samBlock->QVs, decompression_flag, sline.quals);*/
+        QVs_decompress_lossless(as, samBlock->QVs, decompression_flag, sline.quals);
     print_line(&sline, 0, samBlock->fs);
     
     return 1;
