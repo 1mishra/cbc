@@ -56,7 +56,7 @@ enum token_type uint8t2token(uint8_t tok) {
         case 6: return ID_END;
 
     }
-    printf("uint8t2token error: Passed in invalid number\n");
+    printf("uint8t2token error: Passed in invalid number %d\n", tok);
     assert(0);
     return ID_END;
 }

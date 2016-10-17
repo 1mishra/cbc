@@ -63,31 +63,28 @@ int compress_line(Arithmetic_stream as, sam_block samBlock, uint8_t lossiness)  
         memset(snpInRef, 0, MAX_BP_CHR);
     }
     
-    //compress_id(as, samBlock->IDs->models, *samBlock->IDs->IDs);
+    compress_id(as, samBlock->IDs->models, *samBlock->IDs->IDs);
 
-    //compress_mapq(as, samBlock->mapq->models, *samBlock->mapq->mapq);
+    compress_mapq(as, samBlock->mapq->models, *samBlock->mapq->mapq);
 
-    //compress_rnext(as, samBlock->rnext->models, *samBlock->rnext->rnext);
+    compress_rnext(as, samBlock->rnext->models, *samBlock->rnext->rnext);
 
     compress_read(as, samBlock->reads->models, samBlock->reads->lines, chr_change);
     
     //compress_cigar(as, samBlock->reads->models, samBlock->reads->lines->cigar, samBlock->reads->lines->cigarFlags);
 
-
-    /*
     compress_tlen(as, samBlock->tlen->models, *samBlock->tlen->tlen);
 
     compress_pnext_raw(as, samBlock->pnext->models,  samBlock->reads->lines->pos, *samBlock->pnext->pnext);
 
     compress_aux(as, samBlock->aux->models, samBlock->aux->aux_str, samBlock->aux->aux_cnt, samBlock->aux);
 
-    //compress_pnext(as, samBlock->pnext->models, samBlock->reads->lines->pos, *samBlock->tlen->tlen, *samBlock->pnext->pnext, (*samBlock->rnext->rnext[0] != '='), samBlock->reads->lines->cigar);
+    compress_pnext(as, samBlock->pnext->models, samBlock->reads->lines->pos, *samBlock->tlen->tlen, *samBlock->pnext->pnext, (*samBlock->rnext->rnext[0] != '='), samBlock->reads->lines->cigar);
 
     if (lossiness == LOSSY)
         QVs_compress(as, samBlock->QVs, samBlock->QVs->qArray);
     else
-        QVs_compress_lossless(as, samBlock->QVs->model, samBlock->QVs->qv_lines);*/
-
+        QVs_compress_lossless(as, samBlock->QVs->model, samBlock->QVs->qv_lines);
     return 1;
 }
 
@@ -124,17 +121,16 @@ int decompress_line(Arithmetic_stream as, sam_block samBlock, uint8_t lossiness)
         memset(snpInRef, 0, MAX_BP_CHR);
 
     }
-/*
+
     decompress_id(as, samBlock->IDs->models, sline.ID);
 
     decompress_mapq(as, samBlock->mapq->models, &sline.mapq);
 
-    decompress_rnext(as, samBlock->rnext->models, sline.rnext); */
+    decompress_rnext(as, samBlock->rnext->models, sline.rnext); 
 
     decompression_flag = decompress_read(as,samBlock, chr_change, &sline);
     
-    /*
-    decompress_cigar(as, samBlock, &sline);
+    //decompress_cigar(as, samBlock, &sline);
 
     decompress_tlen(as, samBlock->tlen->models, &sline.tlen);
 
@@ -146,8 +142,7 @@ int decompress_line(Arithmetic_stream as, sam_block samBlock, uint8_t lossiness)
             QVs_decompress(as, samBlock->QVs, decompression_flag, sline.quals);
     }
     else
-        QVs_decompress_lossless(as, samBlock->QVs, decompression_flag, sline.quals);*/
-
+        QVs_decompress_lossless(as, samBlock->QVs, decompression_flag, sline.quals);
     print_line(&sline, 0, samBlock->fs);
     
     return 1;
