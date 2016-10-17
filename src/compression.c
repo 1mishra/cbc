@@ -20,18 +20,17 @@ int print_line(struct sam_line_t *sline, uint8_t print_mode, FILE *fs){
     
     switch (print_mode) {
         case 0:
-          /*
             fprintf(fs, "%s\t", sline->ID);
             fprintf(fs, "%d\t", sline->flag);
             fprintf(fs, "%s\t", sline->rname);
             fprintf(fs, "%d\t", sline->pos);
             fprintf(fs, "%d\t", sline->mapq);
             fprintf(fs, "%s\t", sline->cigar);
-            fprintf(fs, "%s\t", sline->rnext);
+            fprintf(fs, "%s\t", sline->rnext); 
             fprintf(fs, "%d\t", sline->pnext);
             fprintf(fs, "%d\t", sline->tlen);
             fprintf(fs, "%s\t", sline->read);
-            fprintf(fs, "%s\t", sline->quals);*/
+            /* fprintf(fs, "%s\t", sline->quals); */
             fprintf(fs, "%s", sline->aux);
             fputc('\n', fs); 
             break;
@@ -67,23 +66,21 @@ int compress_line(Arithmetic_stream as, sam_block samBlock, uint8_t lossiness)  
         memset(snpInRef, 0, MAX_BP_CHR);
     }
     
-    //compress_id(as, samBlock->IDs->models, *samBlock->IDs->IDs);
+    compress_id(as, samBlock->IDs->models, *samBlock->IDs->IDs);
 
-    //compress_mapq(as, samBlock->mapq->models, *samBlock->mapq->mapq);
+    compress_mapq(as, samBlock->mapq->models, *samBlock->mapq->mapq);
 
-    //compress_rnext(as, samBlock->rnext->models, *samBlock->rnext->rnext);
+    compress_rnext(as, samBlock->rnext->models, *samBlock->rnext->rnext);
 
-    //compress_read(as, samBlock->reads->models, samBlock->reads->lines, chr_change);
+    compress_read(as, samBlock->reads->models, samBlock->reads->lines, chr_change);
     
-    //compress_cigar(as, samBlock->reads->models, samBlock->reads->lines->cigar, samBlock->reads->lines->cigarFlags);
+    compress_cigar(as, samBlock->reads->models, samBlock->reads->lines->cigar, samBlock->reads->lines->cigarFlags);
 
-    //compress_tlen(as, samBlock->tlen->models, *samBlock->tlen->tlen);
+    compress_tlen(as, samBlock->tlen->models, *samBlock->tlen->tlen);
 
-    //compress_pnext_raw(as, samBlock->pnext->models,  samBlock->reads->lines->pos, *samBlock->pnext->pnext);
+    compress_pnext_raw(as, samBlock->pnext->models,  samBlock->reads->lines->pos, *samBlock->pnext->pnext);
 
     compress_aux(as, samBlock->aux->models, samBlock->aux->aux_str, samBlock->aux->aux_cnt, samBlock->aux);
-
-    //compress_pnext(as, samBlock->pnext->models, samBlock->reads->lines->pos, *samBlock->tlen->tlen, *samBlock->pnext->pnext, (*samBlock->rnext->rnext[0] != '='), samBlock->reads->lines->cigar);
 
     /*
     if (lossiness == LOSSY)
@@ -127,19 +124,19 @@ int decompress_line(Arithmetic_stream as, sam_block samBlock, uint8_t lossiness)
 
     }
 
-    //decompress_id(as, samBlock->IDs->models, sline.ID);
+    decompress_id(as, samBlock->IDs->models, sline.ID);
 
-    //decompress_mapq(as, samBlock->mapq->models, &sline.mapq);
+    decompress_mapq(as, samBlock->mapq->models, &sline.mapq);
 
-    //decompress_rnext(as, samBlock->rnext->models, sline.rnext); 
+    decompress_rnext(as, samBlock->rnext->models, sline.rnext); 
 
-    //decompression_flag = decompress_read(as,samBlock, chr_change, &sline);
+    decompression_flag = decompress_read(as,samBlock, chr_change, &sline);
     
-    //decompress_cigar(as, samBlock, &sline);
+    decompress_cigar(as, samBlock, &sline);
 
-    //decompress_tlen(as, samBlock->tlen->models, &sline.tlen);
+    decompress_tlen(as, samBlock->tlen->models, &sline.tlen);
 
-    //decompress_pnext(as, samBlock->pnext->models, sline.pos, sline.tlen, samBlock->read_length, &sline.pnext, sline.rnext[0] != '=', NULL);
+    decompress_pnext(as, samBlock->pnext->models, sline.pos, sline.tlen, samBlock->read_length, &sline.pnext, sline.rnext[0] != '=', NULL);
 
     decompress_aux(as, samBlock->aux, sline.aux);
     /*

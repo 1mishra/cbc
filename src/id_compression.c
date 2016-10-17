@@ -159,8 +159,6 @@ int compress_pnext(Arithmetic_stream as, pnext_models models, uint32_t pos, int3
         return 0;
     }
     
-    else
-    
     if (tlen == 0) {
         if (pnext == pos) {
             compress_uint8t(as, models->assumption[0], 0);
