@@ -42,7 +42,7 @@ uint32_t compress_read(Arithmetic_stream as, read_models models, read_line samLi
     PosDiff = compress_pos(as, models->pos, models->pos_alpha, samLine->pos, chr_change);
     tempF = compress_flag(as, models->flag, samLine->invFlag);
     //tempF = compress_flag(as, models->flag, 0);
-    chrPos = compress_edits(as, models, samLine->edits, samLine->read, samLine->pos, PosDiff, tempF);
+    chrPos = compress_edits(as, models, samLine->edits, samLine->cigar, samLine->read, samLine->pos, PosDiff, tempF, &(samLine->cigarFlags));
     
     if (VERIFY) assert(samLine->pos  == chrPos);
 
@@ -268,7 +268,7 @@ uint32_t compress_chars(Arithmetic_stream a, stream_model *c, enum BASEPAIR ref,
 /*****************************************
  * Compress the edits
  ******************************************/
-uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char *read, uint32_t P, uint32_t deltaP, uint8_t flag){
+uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char *cigar, char *read, uint32_t P, uint32_t deltaP, uint8_t flag, uint8_t* cigarFlags){
     
     int i = 0;
     uint32_t Dels[MAX_READ_LENGTH];

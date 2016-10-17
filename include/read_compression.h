@@ -53,7 +53,7 @@ double QVs_decompress_lossless(Arithmetic_stream as, qv_block info, uint8_t inv,
 uint32_t decompress_qv(Arithmetic_stream a, stream_model *model, uint32_t idx);
 
 // Prototypes for the functions to extract the information from the reads
-uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char *read, uint32_t P, uint32_t deltaP, uint8_t flag);
+uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char *cigar, char *read, uint32_t P, uint32_t deltaP, uint8_t flag, uint8_t* cigarFlags);
 int add_snps_to_array(char* edits, snp* SNPs, unsigned int *numSnps, unsigned int insertionPos, char *read);
 uint32_t compute_delta_to_first_snp(uint32_t prevPos, uint32_t readLen);
 
@@ -70,9 +70,9 @@ uint8_t decompress_chars(Arithmetic_stream a, stream_model *c, enum BASEPAIR ref
 
 uint32_t compress_read(Arithmetic_stream as, read_models models, read_line samLine, uint8_t chr_change);
 
-uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos, uint8_t invFlag, char *read, uint32_t readLen, uint8_t chr_change);
+uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos, uint8_t invFlag, char *read, uint32_t readLen, uint8_t chr_change, char *recCigar);
 uint32_t decompress_read(Arithmetic_stream as, sam_block sb, uint8_t chr_change, struct sam_line_t *sline);
-
+uint32_t decompress_cigar(Arithmetic_stream as, sam_block sb, struct sam_line_t *sline);
 int store_reference_in_memory(FILE* refFile);
 
 void foo();

@@ -47,23 +47,6 @@ int store_reference_in_memory(FILE* refFile){
       }
     }
 
-    /*
-    while (fgets(&reference[letterCount], 1024, refFile))
-    {
-        
-        if(reference[letterCount] == '>' || reference[letterCount] == '@'){
-            endoffile = 0;
-            break;
-        }
-       
-        reference[letterCount] = toupper(reference[letterCount]);
-        while (reference[letterCount++] != '\n' ) { 
-          reference[letterCount] = toupper(reference[letterCount]);
-        }
-        letterCount--;
-        
-    }*/
-        
     reference[letterCount] = '\0';
 
     reference = (char *) realloc(reference, letterCount + 1);
@@ -100,7 +83,7 @@ uint32_t decompress_read(Arithmetic_stream as, sam_block sb, uint8_t chr_change,
     
     invFlag = decompress_flag(as, models->flag, &sline->flag);
     
-    reconstruct_read(as, models, tempP, invFlag, sline->read, readLen, chr_change);
+    reconstruct_read(as, models, tempP, invFlag, sline->read, readLen, chr_change, sline->cigar);
     
     return invFlag;
 }
@@ -372,7 +355,7 @@ static void handle_insertions(char *ref, char *target, uint32_t *start_copy, int
 /*****************************************
  * Reconstruct the read
  ******************************************/
-uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos, uint8_t invFlag, char *read, uint32_t readLen, uint8_t chr_change){
+uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos, uint8_t invFlag, char *read, uint32_t readLen, uint8_t chr_change, char *recCigar){
     
     unsigned int numIns = 0, numDels = 0, numSnps = 0, delPos = 0, ctrPos = 0, snpPos = 0, insPos = 0;
     uint32_t prev_pos = 0, delta = 0, deltaPos = 0;
