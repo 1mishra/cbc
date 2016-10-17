@@ -26,10 +26,7 @@ def process_sam(filename):
     if int(fields[1]) & 4 == 4:
         # unmapped read
         continue
-    if 16 & int(fields[1]) > 0:
-      reads.append(reverse_complement(fields[9].strip()))
-    else:
-      reads.append(fields[9].strip())
+    reads.append(fields)
   f.close()
   return reads
 
@@ -37,7 +34,8 @@ def process_uncompressed(filename):
   f = open(filename)
   reads = []
   for line in f:
-    reads.append(line.strip())
+      # for now, exclude reads
+      reads.append(line.split()[:-1])
   return reads
 
 def compare(sam, uncompressed):
@@ -47,9 +45,18 @@ def compare(sam, uncompressed):
   for i, (x, y) in enumerate(zip(sam_reads, reads)):
     if i % 100000 == 0:
       print "Checked " + str(i) + " examples"
+    for k in xrange(min(len(x), len(y))):
+      if x[k] != y[k]:
+          print "Example: " + str(i)
+          print "Field: " + str(k)
+          print "Ref: " + x[k]
+          print "Att: " + y[k]
+
+    """
     if (len(x) != len(y)):
         print "Wrong lengths at example " + str(i)
         assert(len(x) == len(y))
+
     value = Levenshtein.editops(x, y)
     dist = Levenshtein.distance(x, y)
     if dist != 0:
@@ -57,7 +64,7 @@ def compare(sam, uncompressed):
       print dist
       print value
       print "Ref: " + x
-      print "Att: " + y
+      print "Att: " + y"""
   print "Checked " + str(i) + " examples in total"
 
 
