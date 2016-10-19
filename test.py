@@ -51,6 +51,7 @@ def compare(sam, uncompressed):
           print "Field: " + str(k)
           print "Ref: " + x[k]
           print "Att: " + y[k]
+          return
 
     """
     if (len(x) != len(y)):

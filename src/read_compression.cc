@@ -374,9 +374,12 @@ uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char 
         prev_pos += SNPs[i].pos;
     }
 
-    absolute_to_relative(Dels, numDels, Insers, numIns);
     reconstructCigar(Dels, Insers, numDels, numIns, rs->read_length, recCigar);
+    //printf("%s\n", recCigar);
     *cigarFlags = 0;
+
+    //printf("%d\n", strlen(recCigar));
+    //printf("%d\n", strlen(origCigar));
     if (strcmp(recCigar, origCigar) == 0) {
         *cigarFlags = 1;
     }
@@ -430,17 +433,36 @@ void absolute_to_relative(uint32_t *Dels, uint32_t numDels, ins *Insers, uint32_
     // convert to relative
     uint32_t prev_pos = 0;
     uint32_t i;
+    if (numDels > 0) {
+        prev_pos = Dels[i];
+    }
+    /*
+    for (i = 0; i < numDels; i++) {
+        printf("Before Dels %d, pos %d\n", i, Dels[i]);
+    }
+    for (i = 0; i < numIns; i++) {
+        printf("Before Ins %d, pos %d\n", i, Insers[i].pos);
+    }*/
+
     for (i = 1; i < numDels; i++) {
         Dels[i] = Dels[i] - prev_pos;
         prev_pos += Dels[i]; 
-        Dels[i]--;
     }
-    prev_pos = 0;
-    for (i = 1; i < numDels; i++) {
+
+    if (numIns > 0) {
+        prev_pos = Insers[0].pos;
+    }
+
+    for (i = 1; i < numIns; i++) {
         Insers[i].pos = Insers[i].pos - prev_pos;
         prev_pos += Insers[i].pos; 
-        Insers[i].pos--;
     }
 
-
+    /*
+    for (i = 0; i < numDels; i++) {
+        printf("After Dels %d, pos %d\n", i, Dels[i]);
+    }
+    for (i = 0; i < numIns; i++) {
+        printf("After Ins %d, pos %d\n", i, Insers[i].pos);
+    }*/
 }
