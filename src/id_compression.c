@@ -664,18 +664,21 @@ int compress_aux(Arithmetic_stream as, aux_models models, char **aux_str, uint8_
             } else {
                 compress_uint8t(as, models->sign_integers[0], 0);
             }
+            assert(k <= 255);
             compress_uint8t(as, models->integers[0], k); //ALERTA! k > 255?
         } else {
             desc_length = strlen(ptr_data);
-            if(desc_length>256) desc_length=256;
+            if(desc_length>=255) {
+              desc_length=255;
+            }
             
             compress_uint8t(as, models->descBytes[0], (uint8_t)desc_length);
             
-            uint8_t buffer[256] = {0};
             uint8_t buff_cnt = 0;
-            while (*ptr_data!=0) {
+            while (buff_cnt < (uint8_t) - 1 && *ptr_data!=0) {
                 compress_uint8t(as, models->iidBytes[0], *ptr_data);
                 ptr_data++;
+                buff_cnt++;
             }
         }
         
@@ -740,7 +743,7 @@ int decompress_aux(Arithmetic_stream as, aux_block aux, char* finalLine)
         //cambiar a switch
         uint8_t sign; int value;
         
-        char buffer[256] = {0};
+        char buffer[257] = {0};
         uint8_t buff_cnt;
         
         if(typeChar == 'i') {

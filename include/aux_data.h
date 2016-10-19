@@ -18,7 +18,7 @@
 #define MASKTAGCHAR2 0x01F8
 #define MASKTYPE 0x0007
 #define MAX_AUX_FIELDS 20 //max. aux fields in a read. If there are more, they will be ignored.
-#define MAX_AUX_LENGTH 255 //max. length of an aux field
+#define MAX_AUX_LENGTH 512 //max. length of an aux field
 #define MOST_COMMON_LIST_SIZE 200 //MAX 255. No. of elements in the most common list (elements in this list will be mapped to a number from 0 to MOST_COMMON_LIST_SIZE-1).
 #define MOST_COMMON_LIST_ANALIZED_FIELDS 500000 //No. of aux fields that will be analyzed in order to generate the list.
 #define MOST_COMMON_SEARCHLIST_SIZE 1000 //No. of different aux fields that will be analyzed. If there are more than this, they wont be analyzed. Ideally, this value could be the same as MOST_COMMON_LIST_ANALIZED_FIELDS (just in case all the aux fields are repeated just once) but this is both not likely and a waste of memmory.

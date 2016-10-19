@@ -320,14 +320,17 @@ uint32_t reconstructCigar(uint32_t* Dels, ins* Insers, uint32_t numDels, uint32_
 
         //Dels should not be added to the totalCnt as they are just 'absences'
         if(cid[i].pos==0) {
-            sprintf(recCigar + strlen(recCigar),"%dS",cid[i].num);
+            //assert(strlen(recCigar) == index);
+            sprintf(recCigar + index,"%dS",cid[i].num);
             index += compute_num_digits(cid[i].num) + 1;
         } else {
             if (i==0) valM = cid[i].pos;
             else valM = cid[i].pos-cid[i-1].pos;
-            sprintf(recCigar + strlen(recCigar),"%dM",valM);
+            assert(strlen(recCigar) == index);
+            sprintf(recCigar + index,"%dM",valM);
             index += compute_num_digits(valM) + 1;
-            sprintf(recCigar + strlen(recCigar),"%d%c",cid[i].num,cid[i].letter);
+            //assert(strlen(recCigar) == index);
+            sprintf(recCigar + index,"%d%c",cid[i].num,cid[i].letter);
             index += compute_num_digits(cid[i].num) + 1;
         }
 
