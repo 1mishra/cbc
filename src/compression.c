@@ -136,8 +136,6 @@ int decompress_line(Arithmetic_stream as, sam_block samBlock, uint8_t lossiness)
 
     decompress_rnext(as, samBlock->rnext->models, sline.rnext); 
 
-    printf("RNEXT DECOMPRESS: %s\n", sline.rnext);
-
     decompression_flag = decompress_read(as,samBlock, chr_change, &sline);
     
     decompress_cigar(as, samBlock, &sline);
@@ -154,7 +152,6 @@ int decompress_line(Arithmetic_stream as, sam_block samBlock, uint8_t lossiness)
     else
         QVs_decompress_lossless(as, samBlock->QVs, decompression_flag, sline.quals);
 
-    printf("RNEXT DECOMPRESS: %s\n", sline.rnext);
     print_line(&sline, 0, samBlock->fs);
 
     return 1;
