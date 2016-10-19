@@ -60,7 +60,7 @@ struct sam_line_t{
     char rname[1024];
     uint32_t pos;
     uint8_t mapq;
-    char cigar[1024];
+    char cigar[MAX_CIGAR_LENGTH];
     char rnext[1024];
     uint32_t pnext;
     int32_t tlen;

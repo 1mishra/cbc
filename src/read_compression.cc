@@ -374,15 +374,16 @@ uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char 
         prev_pos += SNPs[i].pos;
     }
 
-    reconstructCigar(Dels, Insers, numDels, numIns, rs->read_length, recCigar);
+    //reconstructCigar(Dels, Insers, numDels, numIns, rs->read_length, recCigar);
     //printf("%s\n", recCigar);
     *cigarFlags = 0;
 
     //printf("%d\n", strlen(recCigar));
     //printf("%d\n", strlen(origCigar));
-    //if (strcmp(recCigar, origCigar) == 0) {
-    //    *cigarFlags = 1;
-    //}
+    /*
+    if (strcmp(recCigar, origCigar) == 0) {
+        *cigarFlags = 1;
+    }*/
     return cumsumP;
     
 }

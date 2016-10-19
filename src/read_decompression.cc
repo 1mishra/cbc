@@ -505,7 +505,7 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
     fill_target(&(reference[pos - 1]), read, start_copy, models->read_length, &ref_pos, Dels, &dels_pos, numDels);
 
     absolute_to_relative(Dels, numDels, Insers, numIns);
-    reconstructCigar(Dels, Insers, numDels, numIns, readLen, recCigar);
+    //reconstructCigar(Dels, Insers, numDels, numIns, readLen, recCigar);
 
     if (invFlag == 0) returnVal = 0;
     else if (invFlag == 1) returnVal = 1;
