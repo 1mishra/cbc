@@ -380,9 +380,9 @@ uint32_t compress_edits(Arithmetic_stream as, read_models rs, char *edits, char 
 
     //printf("%d\n", strlen(recCigar));
     //printf("%d\n", strlen(origCigar));
-    if (strcmp(recCigar, origCigar) == 0) {
-        *cigarFlags = 1;
-    }
+    //if (strcmp(recCigar, origCigar) == 0) {
+    //    *cigarFlags = 1;
+    //}
     return cumsumP;
     
 }

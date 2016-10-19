@@ -239,9 +239,6 @@ uint8_t get_most_common_token(char** list, uint32_t list_size, char* aux_field)
     return token;
 }
 
-
-
-
 // RECONSTRUCTING THE CIGAR AS A FUNCTION OF:
 // Dels[], Insers[], numDels, numIns, totalReadLength
 // (convertir en funcion)
@@ -315,6 +312,8 @@ uint32_t reconstructCigar(uint32_t* Dels, ins* Insers, uint32_t numDels, uint32_
     int chrCigarCnt = 0;
 
     int totalCnt = 0;
+
+    uint32_t index = 0;
     for (i=0;i<c;i++) {
         valM = 0;
         valN = 0;
@@ -322,17 +321,21 @@ uint32_t reconstructCigar(uint32_t* Dels, ins* Insers, uint32_t numDels, uint32_
         //Dels should not be added to the totalCnt as they are just 'absences'
         if(cid[i].pos==0) {
             sprintf(recCigar + strlen(recCigar),"%dS",cid[i].num);
+            index += compute_num_digits(cid[i].num) + 1;
         } else {
             if (i==0) valM = cid[i].pos;
             else valM = cid[i].pos-cid[i-1].pos;
             sprintf(recCigar + strlen(recCigar),"%dM",valM);
+            index += compute_num_digits(valM) + 1;
             sprintf(recCigar + strlen(recCigar),"%d%c",cid[i].num,cid[i].letter);
+            index += compute_num_digits(cid[i].num) + 1;
         }
 
         if (cid[i].letter != 'D') valN = cid[i].num;
-            totalCnt += valN + valM;
-            }
+        totalCnt += valN + valM;
+    }
 
+    /*
     if(totalCnt < totalReadLength)
     sprintf(recCigar + strlen(recCigar),"%dM",totalReadLength-totalCnt);
 
@@ -341,6 +344,7 @@ uint32_t reconstructCigar(uint32_t* Dels, ins* Insers, uint32_t numDels, uint32_
 
     //printf("%s\n",recCigar);
 
-    //if(strcmp(recCigar,origCigar)!=0) printf("No match =( \n%s\n%s\n\n",origCigar,recCigar);
+    //if(strcmp(recCigar,origCigar)!=0) printf("No match =( \n%s\n%s\n\n",origCigar,recCigar);*/
     return 1;
 }
+

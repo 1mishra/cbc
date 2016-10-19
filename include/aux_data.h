@@ -23,7 +23,7 @@
 #define MOST_COMMON_LIST_ANALIZED_FIELDS 500000 //No. of aux fields that will be analyzed in order to generate the list.
 #define MOST_COMMON_SEARCHLIST_SIZE 1000 //No. of different aux fields that will be analyzed. If there are more than this, they wont be analyzed. Ideally, this value could be the same as MOST_COMMON_LIST_ANALIZED_FIELDS (just in case all the aux fields are repeated just once) but this is both not likely and a waste of memmory.
 
-#define MAX_CIGAR_LENGTH 100
+#define MAX_CIGAR_LENGTH 2048 //Twice as long as MAX_READ_LENGTH
 
 
 /*
