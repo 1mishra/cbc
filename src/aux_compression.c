@@ -110,7 +110,7 @@ uint8_t inversePreprocessTagType(char byte1, char byte2, char *ptr)
 uint8_t create_most_common_list(sam_block sb) {
     //MOST_COMMON_LIST_ANALIZED_FIELDS
     //MOST_COMMON_LIST_SIZE
-    char list[MOST_COMMON_SEARCHLIST_SIZE+1][MAX_AUX_LENGTH] = {0};
+    static char list[MOST_COMMON_SEARCHLIST_SIZE+1][MAX_AUX_LENGTH] = {0};
     int duplicates[MOST_COMMON_SEARCHLIST_SIZE+1][2] = {0};
 
     long currentPosition;
