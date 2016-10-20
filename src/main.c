@@ -44,6 +44,19 @@ void usage(const char *name) {
 }
 
 
+void change_dir(char *dir) {
+    if (chdir(dir) == -1) {
+        fprintf(stderr, "Failed to change directories to %s\n", dir);
+        exit(1);
+    }
+}
+
+void make_dir(char *dirname) {
+    struct stat sb;
+    if (!(stat(dirname, &sb) == 0 && S_ISDIR(sb.st_mode)) && mkdir(dirname, 0777) == -1) {
+        fprintf(stderr, "Failed to create directory %s\n", dirname);
+    }
+}
 
 int main(int argc, const char * argv[]) {
 
@@ -245,16 +258,8 @@ int main(int argc, const char * argv[]) {
                 fputs ("File error while opening ref and sam files\n",stderr); exit (1);
             }
 
-            struct stat sb;
-            if (!(stat(output_name, &sb) == 0 && S_ISDIR(sb.st_mode)) && mkdir(output_name, 0777) == -1) {
-                fputs("Error creating directory with passed in output_name\n", stderr);
-                exit(1);
-            }
-
-            if (chdir(output_name) == -1) {
-                fputs("Error changing directories to output name\n", stderr);
-                exit(1);
-            }
+            make_dir(output_name);
+            change_dir(output_name);
 
             comp_info.fcomp = fopen(MAPPED_READS, "w");
             comp_info.qv_opts = &opts;
@@ -269,10 +274,8 @@ int main(int argc, const char * argv[]) {
             if ( comp_info.fref == NULL || comp_info.fsam == NULL ){
                 fputs ("File error while opening ref and sam files\n",stderr); exit (1);
             }
-            if (chdir(input_name) == -1) {
-                fputs("Error changing directories to input name\n", stderr);
-                exit(1);
-            }
+
+            change_dir(input_name);
             comp_info.fcomp = fopen(MAPPED_READS, "r");
             comp_info.qv_opts = &opts;
             
