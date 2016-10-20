@@ -301,6 +301,7 @@ int main(int argc, const char * argv[]) {
             write_headers(headers_file, comp_info.fsam);
             fclose(headers_file);
 
+            comp_info.funmapped = fopen(UNMAPPED_READS, "r");
             comp_info.fcomp = fopen(MAPPED_READS, "r");
             comp_info.qv_opts = &opts;
             

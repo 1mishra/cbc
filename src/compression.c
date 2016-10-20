@@ -329,13 +329,18 @@ void* decompress(void *thread_info){
     
     n += samBlock->block_length;
     
-    
-    ticks = clock() - begin;
-    
-    printf("Decompression took %f\n", ((float)ticks)/CLOCKS_PER_SEC);
+    // write the unmapped reads
+    char c;
+    while ( (c = getc(info->funmapped)) != EOF) {
+        putc(c, info->fsam);
+    }
     
     fclose(info->fsam);
     fclose(info->fref);
+    fclose(info->funmapped);
+    fclose(info->fcomp);
     
+    ticks = clock() - begin;
+    printf("Decompression took %f\n", ((float)ticks)/CLOCKS_PER_SEC);
     return NULL;
 }
