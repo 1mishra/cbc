@@ -19,7 +19,7 @@
 
 #include <pthread.h>
 
-
+static const char *MAPPED_READS = "mapped_reads";
 
 /**
  * Displays a usage name
@@ -240,10 +240,23 @@ int main(int argc, const char * argv[]) {
         case COMPRESSION:
             comp_info.fsam = fopen( input_name, "r");
             comp_info.fref = fopen ( ref_name , "r" );
-            comp_info.fcomp = fopen( output_name, "w");
+
             if ( comp_info.fref == NULL || comp_info.fsam == NULL ){
                 fputs ("File error while opening ref and sam files\n",stderr); exit (1);
             }
+
+            struct stat sb;
+            if (!(stat(output_name, &sb) == 0 && S_ISDIR(sb.st_mode)) && mkdir(output_name, 0777) == -1) {
+                fputs("Error creating directory with passed in output_name\n", stderr);
+                exit(1);
+            }
+
+            if (chdir(output_name) == -1) {
+                fputs("Error changing directories to output name\n", stderr);
+                exit(1);
+            }
+
+            comp_info.fcomp = fopen(MAPPED_READS, "w");
             comp_info.qv_opts = &opts;
             
             compress((void *)&comp_info);
@@ -253,10 +266,14 @@ int main(int argc, const char * argv[]) {
         case DECOMPRESSION:
             comp_info.fsam = fopen(output_name, "w");
             comp_info.fref = fopen ( ref_name , "r" );
-            comp_info.fcomp = fopen(input_name, "r");
             if ( comp_info.fref == NULL || comp_info.fsam == NULL ){
                 fputs ("File error while opening ref and sam files\n",stderr); exit (1);
             }
+            if (chdir(input_name) == -1) {
+                fputs("Error changing directories to input name\n", stderr);
+                exit(1);
+            }
+            comp_info.fcomp = fopen(MAPPED_READS, "r");
             comp_info.qv_opts = &opts;
             
             decompress((void *)&comp_info);
