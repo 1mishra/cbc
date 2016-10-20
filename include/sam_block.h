@@ -76,6 +76,7 @@ struct compressor_info_t{
     FILE *fsam;
     FILE *fref;
     FILE *fcomp;
+    FILE *funmapped;
     uint8_t mode;
     struct qv_options_t *qv_opts;
     uint8_t lossiness;

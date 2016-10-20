@@ -9,10 +9,11 @@
 #include <stdio.h>
 #include <pthread.h>
 #include <time.h>
+#include <stdbool.h>
 #include "sam_block.h"
 #include "read_compression.h"
 
-int print_line(struct sam_line_t *sline, uint8_t print_mode, FILE *fs){
+int print_line(struct sam_line_t *sline, uint8_t print_mode, FILE *fs, bool compressing){
     
     char foo[] = "CIGAR";
     
@@ -31,7 +32,7 @@ int print_line(struct sam_line_t *sline, uint8_t print_mode, FILE *fs){
             fprintf(fs, "%d\t", sline->tlen);
             fprintf(fs, "%s\t", sline->read);
             // need to re-reverse quality scores
-            if ((sline->flag & 16) == 16) {
+            if ((sline->flag & 16) == 16 && !compressing) {
                 for (i = sline->readLength - 1; i >= 0; --i)
                     fputc(sline->quals[i], fs);
                 fputc('\t', fs);
@@ -48,16 +49,59 @@ int print_line(struct sam_line_t *sline, uint8_t print_mode, FILE *fs){
     return 0;
 }
 
-int compress_line(Arithmetic_stream as, sam_block samBlock, uint8_t lossiness)  {
+int print_line(struct sam_line_t *sline, uint8_t print_mode, FILE *fs) {
+    return print_line(sline, print_mode, fs, false);
+}
+
+int compress_line(Arithmetic_stream as, sam_block samBlock, FILE *funmapped, uint8_t lossiness)  {
     
+    static bool unmapped_reads = false;
     uint8_t chr_change;
     
     // Load the data from the file
     if(load_sam_line(samBlock))
         return 0;
     
-    if ( (samBlock->reads->lines->invFlag & 4) == 4) {
+    // If read is unmapped and reference name is *, we assume that all the remaining
+    // lines are unmapped and have reference name *.
+    // If the read is unmapped but has a position/reference name, we simply use that
+    // information to compress it.
+    if ( (samBlock->reads->lines->invFlag & 4) == 4 && *samBlock->rnames->rnames[0] == '*'){
+        read_line line = samBlock->reads->lines; 
+
+        fprintf(funmapped, "%s\t", *samBlock->IDs->IDs);
+        fprintf(funmapped, "%d\t", line->invFlag);
+        fprintf(funmapped, "%s\t", *samBlock->rnames->rnames);
+        fprintf(funmapped, "%d\t", line->pos);
+        fprintf(funmapped, "%d\t", *samBlock->mapq->mapq);
+        fprintf(funmapped, "%s\t", line->cigar);
+        fprintf(funmapped, "%s\t", *samBlock->rnext->rnext); 
+        fprintf(funmapped, "%d\t", *samBlock->pnext->pnext);
+        fprintf(funmapped, "%d\t", *samBlock->tlen->tlen);
+        fprintf(funmapped, "%s\t", line->read);
+        int32_t i = 0;
+        qv_line_t qline = *samBlock->QVs->qv_lines;
+        if ((line->invFlag & 16) == 16) {
+            for (i = qline.columns - 1; i >= 0; i--) {
+                fputc(qline.data[i] + 33, funmapped);
+            }
+        } else {
+            for (i = 0; i < qline.columns; i++) {
+                fputc(qline.data[i] + 33, funmapped);
+            }
+        }
+        fputc('\t', funmapped);
+        for (i = 0; i < samBlock->aux->aux_cnt; i++) {
+            fprintf(funmapped, "%s", samBlock->aux->aux_str[i]);  
+            if (i < samBlock->aux->aux_cnt - 1) fputc('\t', funmapped);
+        }
+        fputc('\n', funmapped); 
         return 1;
+    } else {
+        if (unmapped_reads) {
+            fprintf(stderr, "compress_line error: There is a mapped read following a read that is not mapped to any chromosome. This probably means that the sam file is not correctly sorted.\n");
+            exit(1);
+        }
     }
         
     // Compress sam line
@@ -229,7 +273,7 @@ void* compress(void *thread_info){
     else
         compress_int(as, samBlock->codebook_model, LOSSLESS);
     
-    while (compress_line(as, samBlock, info.lossiness)) {
+    while (compress_line(as, samBlock, info.funmapped, info.lossiness)) {
         ++lineCtr;
         if (lineCtr % 1000000 == 0) {
           printf("[cbc] compressed %zu lines\n", lineCtr);
@@ -245,6 +289,7 @@ void* compress(void *thread_info){
     printf("Final Size: %lld\n", compress_file_size);
     
     fclose(info.fsam);
+    fclose(info.funmapped);
     
     ticks = clock() - begin;
     

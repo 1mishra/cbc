@@ -58,6 +58,21 @@ void make_dir(char *dirname) {
     }
 }
 
+void write_headers(FILE *input, FILE *output) {
+    char c;
+    while ( (c = getc(input)) != EOF) {
+        if (c != '@') {
+          break;
+        }
+        do {
+            putc(c, output);
+            c = getc(input);
+        } while (c != '\n' && c != EOF);
+        if (c == '\n') putc(c, output);
+    }
+    rewind(input);
+}
+
 int main(int argc, const char * argv[]) {
 
     uint32_t mode, i = 0, file_idx = 0, rc = 0, lossiness = LOSSLESS;
@@ -250,7 +265,7 @@ int main(int argc, const char * argv[]) {
     comp_info.lossiness = lossiness;
     
     switch (mode) {
-        case COMPRESSION:
+        case COMPRESSION: {
             comp_info.fsam = fopen( input_name, "r");
             comp_info.fref = fopen ( ref_name , "r" );
 
@@ -261,16 +276,20 @@ int main(int argc, const char * argv[]) {
             make_dir(output_name);
             change_dir(output_name);
 
+            FILE *headers_file = fopen(HEADERS, "w");
+            write_headers(comp_info.fsam, headers_file);
+            fclose(headers_file);
 
 
+            comp_info.funmapped = fopen(UNMAPPED_READS, "w");
             comp_info.fcomp = fopen(MAPPED_READS, "w");
             comp_info.qv_opts = &opts;
             
             compress((void *)&comp_info);
             time(&end_main);
             break;
-            
-        case DECOMPRESSION:
+                          }
+        case DECOMPRESSION: {
             comp_info.fsam = fopen(output_name, "w");
             comp_info.fref = fopen ( ref_name , "r" );
             if ( comp_info.fref == NULL || comp_info.fsam == NULL ){
@@ -278,13 +297,17 @@ int main(int argc, const char * argv[]) {
             }
 
             change_dir(input_name);
+            FILE *headers_file = fopen(HEADERS, "r");
+            write_headers(headers_file, comp_info.fsam);
+            fclose(headers_file);
+
             comp_info.fcomp = fopen(MAPPED_READS, "r");
             comp_info.qv_opts = &opts;
             
             decompress((void *)&comp_info);
             time(&end_main);
             break;
-            
+                            }
         case REMOTE_DECOMPRESSION:
             comp_info.fsam = fopen(output_name, "w");
             comp_info.fref = fopen ( ref_name , "r" );

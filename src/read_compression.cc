@@ -26,11 +26,6 @@ uint32_t compress_read(Arithmetic_stream as, read_models models, read_line samLi
     int tempF, PosDiff, chrPos, k;
     uint32_t mask;
     uint16_t maskedReadVal;
-    // For now lets skip the unmapping ones
-    if (samLine->invFlag & 4) {
-//        assert(strcmp("*", samLine->cigar) == 0);
-        return 1;
-    }
     // compress read length (assume int)
     for (k=0;k<4;k++) {
         mask = 0xFF<<(k*8);
