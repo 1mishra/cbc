@@ -761,7 +761,6 @@ int decompress_aux(Arithmetic_stream as, aux_block aux, char* finalLine)
             //value dec.
             desc_length = decompress_uint8t(as, models->descBytes[0]) << 8;
             desc_length |= decompress_uint8t(as, models->descBytes[0]);
-            printf("Decompressed length: %d\n", desc_length);
             for (buff_cnt=0;buff_cnt<desc_length;buff_cnt++) {
                 buffer[buff_cnt] = decompress_uint8t(as, models->iidBytes[0]);
             }
