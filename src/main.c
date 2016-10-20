@@ -7,6 +7,7 @@
 //
 
 
+#include <sys/wait.h>
 #include <stdio.h>
 #include <time.h>
 #include <inttypes.h>
@@ -17,9 +18,10 @@
 
 #include <pthread.h>
 
-static const char *MAPPED_READS = "mapped_reads";
-static const char *HEADERS = "headers";
-static const char *UNMAPPED_READS = "unmapped_reads";
+static char *MAPPED_READS = "mapped_reads";
+static char *HEADERS = "headers";
+static char *UNMAPPED_READS = "unmapped_reads";
+static char *ZIPPED_READS = "unmapped_reads.gz";
 
 /**
  * Displays a usage name
@@ -286,10 +288,26 @@ int main(int argc, const char * argv[]) {
             comp_info.qv_opts = &opts;
             
             compress((void *)&comp_info);
+            fclose(comp_info.funmapped);
+
+            pid_t pid = fork();
+            if (pid == 0) {
+                char* argv[4];
+                argv[0] = "gzip";
+                argv[1] = "-fk";
+                argv[2] = UNMAPPED_READS;
+                argv[3] = NULL;
+                execvp(argv[0], argv);
+                exit(1);
+            }
+            waitpid(pid, NULL, 0);
+
+            fclose(comp_info.fsam);
             time(&end_main);
             break;
                           }
         case DECOMPRESSION: {
+
             comp_info.fsam = fopen(output_name, "w");
             comp_info.fref = fopen ( ref_name , "r" );
             if ( comp_info.fref == NULL || comp_info.fsam == NULL ){
@@ -297,15 +315,37 @@ int main(int argc, const char * argv[]) {
             }
 
             change_dir(input_name);
+            pid_t pid = fork();
+            if (pid == 0) {
+                char* argv[4];
+                argv[0] = "gzip";
+                argv[1] = "-dfk";
+                argv[2] = ZIPPED_READS;
+                argv[3] = NULL;
+                execvp(argv[0], argv);
+                exit(1);
+            }
+
             FILE *headers_file = fopen(HEADERS, "r");
             write_headers(headers_file, comp_info.fsam);
             fclose(headers_file);
 
-            comp_info.funmapped = fopen(UNMAPPED_READS, "r");
             comp_info.fcomp = fopen(MAPPED_READS, "r");
             comp_info.qv_opts = &opts;
             
             decompress((void *)&comp_info);
+
+            waitpid(pid, NULL, 0);
+            comp_info.funmapped = fopen(UNMAPPED_READS, "r");
+            char c;
+            while ( (c = getc(comp_info.funmapped)) != EOF) {
+                putc(c, comp_info.fsam);
+            }
+
+            fclose(comp_info.fsam);
+            fclose(comp_info.fref);
+            fclose(comp_info.funmapped);
+            fclose(comp_info.fcomp);
             time(&end_main);
             break;
                             }

@@ -288,12 +288,9 @@ void* compress(void *thread_info){
     
     printf("Final Size: %lld\n", compress_file_size);
     
-    fclose(info.fsam);
-    fclose(info.funmapped);
-    
     ticks = clock() - begin;
     
-    printf("Compression took %f\n", ((float)ticks)/CLOCKS_PER_SEC);
+    printf("Compression (mapped reads only) took %f\n", ((float)ticks)/CLOCKS_PER_SEC);
     
     //pthread_exit(NULL);
     return NULL;
@@ -306,6 +303,7 @@ void* decompress(void *thread_info){
     clock_t begin = clock();
     clock_t ticks;
     
+
     struct compressor_info_t *info = (struct compressor_info_t *)thread_info;
     
     Arithmetic_stream as = alloc_arithmetic_stream(info->mode, info->fcomp);
@@ -329,18 +327,7 @@ void* decompress(void *thread_info){
     
     n += samBlock->block_length;
     
-    // write the unmapped reads
-    char c;
-    while ( (c = getc(info->funmapped)) != EOF) {
-        putc(c, info->fsam);
-    }
-    
-    fclose(info->fsam);
-    fclose(info->fref);
-    fclose(info->funmapped);
-    fclose(info->fcomp);
-    
     ticks = clock() - begin;
-    printf("Decompression took %f\n", ((float)ticks)/CLOCKS_PER_SEC);
+    printf("Decompression (mapped reads only) took %f\n", ((float)ticks)/CLOCKS_PER_SEC);
     return NULL;
 }
