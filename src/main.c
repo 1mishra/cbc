@@ -7,8 +7,6 @@
 //
 
 
-// ssh:idoia@171.64.93.7 password: z1627126
-
 #include <stdio.h>
 #include <time.h>
 #include <inttypes.h>
@@ -20,6 +18,8 @@
 #include <pthread.h>
 
 static const char *MAPPED_READS = "mapped_reads";
+static const char *HEADERS = "headers";
+static const char *UNMAPPED_READS = "unmapped_reads";
 
 /**
  * Displays a usage name
@@ -260,6 +260,8 @@ int main(int argc, const char * argv[]) {
 
             make_dir(output_name);
             change_dir(output_name);
+
+
 
             comp_info.fcomp = fopen(MAPPED_READS, "w");
             comp_info.qv_opts = &opts;
