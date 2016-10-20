@@ -668,14 +668,18 @@ int compress_aux(Arithmetic_stream as, aux_models models, char **aux_str, uint8_
             compress_uint8t(as, models->integers[0], k); //ALERTA! k > 255?
         } else {
             desc_length = strlen(ptr_data);
-            if(desc_length>=255) {
-              desc_length=255;
+            if(desc_length>=UINT16_MAX) {
+              desc_length=UINT16_MAX;
             }
             
-            compress_uint8t(as, models->descBytes[0], (uint8_t)desc_length);
+            uint8_t first_byte = (desc_length >> 8) & UINT8_MAX;
+            uint8_t second_byte = (desc_length) & UINT8_MAX;
+
+            compress_uint8t(as, models->descBytes[0], first_byte);
+            compress_uint8t(as, models->descBytes[0], second_byte);
             
             uint8_t buff_cnt = 0;
-            while (buff_cnt < (uint8_t) - 1 && *ptr_data!=0) {
+            while (buff_cnt < UINT16_MAX && *ptr_data!=0) {
                 compress_uint8t(as, models->iidBytes[0], *ptr_data);
                 ptr_data++;
                 buff_cnt++;
@@ -695,7 +699,7 @@ int decompress_aux(Arithmetic_stream as, aux_block aux, char* finalLine)
     uint8_t it, most_common_flag, most_common_token;
     uint8_t tagtypeLUTflag, typeLUTflag, tagtypeLUTindex, mappedChar1, mappedChar2;
     char tagChar1, tagChar2, typeChar;
-    uint8_t desc_length;
+    uint16_t desc_length = 0;
     char auxFieldString[MAX_AUX_LENGTH] = {0};
     
     char* finalLine_ptr = finalLine;
@@ -743,8 +747,8 @@ int decompress_aux(Arithmetic_stream as, aux_block aux, char* finalLine)
         //cambiar a switch
         uint8_t sign; int value;
         
-        char buffer[257] = {0};
-        uint8_t buff_cnt;
+        char buffer[MAX_AUX_LENGTH] = {0};
+        uint16_t buff_cnt;
         
         if(typeChar == 'i') {
             sign = decompress_uint8t(as, models->sign_integers[0]);
@@ -755,8 +759,9 @@ int decompress_aux(Arithmetic_stream as, aux_block aux, char* finalLine)
             buffer[desc_length] = '\t';
         } else {
             //value dec.
-            desc_length = decompress_uint8t(as, models->descBytes[0]);
-
+            desc_length = decompress_uint8t(as, models->descBytes[0]) << 8;
+            desc_length |= decompress_uint8t(as, models->descBytes[0]);
+            printf("Decompressed length: %d\n", desc_length);
             for (buff_cnt=0;buff_cnt<desc_length;buff_cnt++) {
                 buffer[buff_cnt] = decompress_uint8t(as, models->iidBytes[0]);
             }
