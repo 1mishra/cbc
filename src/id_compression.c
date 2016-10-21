@@ -658,14 +658,18 @@ int compress_aux(Arithmetic_stream as, aux_models models, char **aux_str, uint8_
             auxPtr = ptr+5;
             //for(j=5;j<i;j++) printf("%c",ptr[j]);
             k=atoi(auxPtr);
+
             if(k<0) {
                 compress_uint8t(as, models->sign_integers[0], 1);
                 k=-k;
             } else {
                 compress_uint8t(as, models->sign_integers[0], 0);
             }
-            assert(k <= 255);
-            compress_uint8t(as, models->integers[0], k); //ALERTA! k > 255?
+            uint8_t first_byte = (k >> 8) & UINT8_MAX;
+            uint8_t second_byte = (k) & UINT8_MAX;
+            assert(k <= UINT16_MAX);
+            compress_uint8t(as, models->integers[0], first_byte);
+            compress_uint8t(as, models->integers[0], second_byte);
         } else {
             desc_length = strlen(ptr_data);
             if(desc_length>=UINT16_MAX) {
@@ -752,7 +756,8 @@ int decompress_aux(Arithmetic_stream as, aux_block aux, char* finalLine)
         
         if(typeChar == 'i') {
             sign = decompress_uint8t(as, models->sign_integers[0]);
-            value = decompress_uint8t(as, models->integers[0]); //alerta (ver analogo en comp)
+            value = decompress_uint8t(as, models->integers[0]) << 8; //alerta (ver analogo en comp)
+            value |= decompress_uint8t(as, models->integers[0]);
             if(sign==1) value = -value;
             sprintf(buffer,"%d",value);
             desc_length = strlen(buffer);
