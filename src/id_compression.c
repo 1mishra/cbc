@@ -591,7 +591,7 @@ int compress_aux(Arithmetic_stream as, aux_models models, char **aux_str, uint8_
     
     uint32_t desc_length;
     
-    int i,j,k; char *auxPtr;
+    int32_t i,j,k; char *auxPtr;
 
     uint8_t it;
     uint16_t numericTagType;
@@ -659,17 +659,14 @@ int compress_aux(Arithmetic_stream as, aux_models models, char **aux_str, uint8_
             //for(j=5;j<i;j++) printf("%c",ptr[j]);
             k=atoi(auxPtr);
 
-            if(k<0) {
-                compress_uint8t(as, models->sign_integers[0], 1);
-                k=-k;
-            } else {
-                compress_uint8t(as, models->sign_integers[0], 0);
-            }
-            uint8_t first_byte = (k >> 8) & UINT8_MAX;
-            uint8_t second_byte = (k) & UINT8_MAX;
-            assert(k <= UINT16_MAX);
+            uint8_t first_byte = (k >> 24) & UINT8_MAX;
+            uint8_t second_byte = (k >> 16) & UINT8_MAX;
+            uint8_t third_byte = (k >> 8) & UINT8_MAX;
+            uint8_t fourth_byte = (k) & UINT8_MAX;
             compress_uint8t(as, models->integers[0], first_byte);
-            compress_uint8t(as, models->integers[0], second_byte);
+            compress_uint8t(as, models->integers[1], second_byte);
+            compress_uint8t(as, models->integers[2], third_byte);
+            compress_uint8t(as, models->integers[3], fourth_byte);
         } else {
             desc_length = strlen(ptr_data);
             if(desc_length>=UINT16_MAX) {
@@ -680,7 +677,7 @@ int compress_aux(Arithmetic_stream as, aux_models models, char **aux_str, uint8_
             uint8_t second_byte = (desc_length) & UINT8_MAX;
 
             compress_uint8t(as, models->descBytes[0], first_byte);
-            compress_uint8t(as, models->descBytes[0], second_byte);
+            compress_uint8t(as, models->descBytes[1], second_byte);
             
             uint8_t buff_cnt = 0;
             while (buff_cnt < UINT16_MAX && *ptr_data!=0) {
@@ -755,17 +752,17 @@ int decompress_aux(Arithmetic_stream as, aux_block aux, char* finalLine)
         uint16_t buff_cnt;
         
         if(typeChar == 'i') {
-            sign = decompress_uint8t(as, models->sign_integers[0]);
-            value = decompress_uint8t(as, models->integers[0]) << 8; //alerta (ver analogo en comp)
-            value |= decompress_uint8t(as, models->integers[0]);
-            if(sign==1) value = -value;
+            value = decompress_uint8t(as, models->integers[0]) << 24; //alerta (ver analogo en comp)
+            value |= decompress_uint8t(as, models->integers[1]) << 16;
+            value |= decompress_uint8t(as, models->integers[2]) << 8;
+            value |= decompress_uint8t(as, models->integers[3]);
             sprintf(buffer,"%d",value);
             desc_length = strlen(buffer);
             buffer[desc_length] = '\t';
         } else {
             //value dec.
             desc_length = decompress_uint8t(as, models->descBytes[0]) << 8;
-            desc_length |= decompress_uint8t(as, models->descBytes[0]);
+            desc_length |= decompress_uint8t(as, models->descBytes[1]);
             for (buff_cnt=0;buff_cnt<desc_length;buff_cnt++) {
                 buffer[buff_cnt] = decompress_uint8t(as, models->iidBytes[0]);
             }

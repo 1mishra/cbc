@@ -679,7 +679,7 @@ aux_models alloc_aux_models_t(){
     rtn->typeRAW = initialize_stream_model_id(rescale, 1, TYPELUTLENGTH);
     
     
-    rtn->descBytes = initialize_stream_model_id(rescale, 1, 256);
+    rtn->descBytes = initialize_stream_model_id(rescale, 2, 256);
     rtn->iidBytes = initialize_stream_model_id(rescale, 1, 256);
     
     //stream_model *most_common_values;
@@ -690,7 +690,7 @@ aux_models alloc_aux_models_t(){
     rtn->most_common_list = initialize_stream_model_id(rescale, 1, 256);
     
     rtn->sign_integers = initialize_stream_model_id(rescale, 1, 2);
-    rtn->integers = initialize_stream_model_id(rescale, 1, 256);
+    rtn->integers = initialize_stream_model_id(rescale, 4, 256);
     
 
     return rtn;
