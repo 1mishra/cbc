@@ -257,7 +257,7 @@ void* compress(void *thread_info){
     struct qv_options_t opts = *(info.qv_opts);
     
     // Allocs the Arithmetic and the I/O stream
-    Arithmetic_stream as = alloc_arithmetic_stream(info.mode, info.fcomp);
+    Arithmetic_stream as = alloc_arithmetic_stream(info.mode, info.metadata);
     
     // Allocs the different blocks and all the models for the Arithmetic
     sam_block samBlock = alloc_sam_models(as, info.fsam, info.fref, &opts, info.mode);
@@ -273,6 +273,10 @@ void* compress(void *thread_info){
     else
         compress_int(as, samBlock->codebook_model, LOSSLESS);
     
+    compress_file_size += encoder_last_step(as);
+
+    as = alloc_arithmetic_stream(info.mode, info.fcomp);
+
     while (compress_line(as, samBlock, info.funmapped, info.lossiness)) {
         ++lineCtr;
         if (lineCtr % 1000000 == 0) {
@@ -284,7 +288,7 @@ void* compress(void *thread_info){
     compress_rname(as, samBlock->rnames->models, "\n");
     
     //end the compression
-    compress_file_size = encoder_last_step(as);
+    compress_file_size += encoder_last_step(as);
     
     printf("Final Size: %lld\n", compress_file_size);
     
@@ -306,7 +310,7 @@ void* decompress(void *thread_info){
 
     struct compressor_info_t *info = (struct compressor_info_t *)thread_info;
     
-    Arithmetic_stream as = alloc_arithmetic_stream(info->mode, info->fcomp);
+    Arithmetic_stream as = alloc_arithmetic_stream(info->mode, info->metadata);
     
     sam_block samBlock = alloc_sam_models(as, info->fsam, info->fref, info->qv_opts, DECOMPRESSION);
     
@@ -320,6 +324,7 @@ void* decompress(void *thread_info){
         initialize_qv_model(as, samBlock->QVs, DECOMPRESSION);
     }
     
+    as = alloc_arithmetic_stream(info->mode, info->fcomp);
     // Decompress the blocks
     while(decompress_line(as, samBlock, info->lossiness)){
         n++;

@@ -17,6 +17,7 @@
 #include "edit.h"
 
 #include <pthread.h>
+#define METADATA "metadata"
 
 static char *MAPPED_READS = "mapped_reads";
 static char *HEADERS = "headers";
@@ -278,6 +279,7 @@ int main(int argc, const char * argv[]) {
             make_dir(output_name);
             change_dir(output_name);
 
+            comp_info.metadata = fopen(METADATA, "w");
             FILE *headers_file = fopen(HEADERS, "w");
             write_headers(comp_info.fsam, headers_file);
             fclose(headers_file);
@@ -315,6 +317,7 @@ int main(int argc, const char * argv[]) {
             }
 
             change_dir(input_name);
+            comp_info.metadata = fopen(METADATA, "r");
             pid_t pid = fork();
             if (pid == 0) {
                 char* argv[4];
