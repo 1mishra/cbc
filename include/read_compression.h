@@ -17,7 +17,6 @@
 #include <cstdint>
 #include <limits>
 
-#define UINT32_MAX ((uint32_t) - 1)
 #define MAX_BP_CHR 300000000
 #define CHR_CHANGE_FLAG 0xffffffff
 #define END_GENOME_FLAG 0xfffffff0
