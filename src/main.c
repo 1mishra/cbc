@@ -19,10 +19,10 @@
 #include <pthread.h>
 #define METADATA "metadata"
 
-static char *MAPPED_READS = "mapped_reads";
 static char *HEADERS = "headers";
 static char *UNMAPPED_READS = "unmapped_reads";
 static char *ZIPPED_READS = "unmapped_reads.gz";
+static char *SIZE = "size";
 
 /**
  * Displays a usage name
@@ -271,6 +271,7 @@ int main(int argc, const char * argv[]) {
         case COMPRESSION: {
             comp_info.fsam = fopen( input_name, "r");
             comp_info.fref = fopen ( ref_name , "r" );
+            comp_info.size = fopen(SIZE, "w");
 
             if ( comp_info.fref == NULL || comp_info.fsam == NULL ){
                 fputs ("File error while opening ref and sam files\n",stderr); exit (1);
@@ -286,11 +287,11 @@ int main(int argc, const char * argv[]) {
 
 
             comp_info.funmapped = fopen(UNMAPPED_READS, "w");
-            comp_info.fcomp = fopen(MAPPED_READS, "w");
             comp_info.qv_opts = &opts;
-            
+
             compress((void *)&comp_info);
             fclose(comp_info.funmapped);
+            fclose(comp_info.size);
 
             pid_t pid = fork();
             if (pid == 0) {
@@ -312,6 +313,7 @@ int main(int argc, const char * argv[]) {
 
             comp_info.fsam = fopen(output_name, "w");
             comp_info.fref = fopen ( ref_name , "r" );
+            comp_info.size = fopen(SIZE, "r");
             if ( comp_info.fref == NULL || comp_info.fsam == NULL ){
                 fputs ("File error while opening ref and sam files\n",stderr); exit (1);
             }
@@ -333,10 +335,10 @@ int main(int argc, const char * argv[]) {
             write_headers(headers_file, comp_info.fsam);
             fclose(headers_file);
 
-            comp_info.fcomp = fopen(MAPPED_READS, "r");
             comp_info.qv_opts = &opts;
             
             decompress((void *)&comp_info);
+            fclose(comp_info.size);
 
             waitpid(pid, NULL, 0);
             comp_info.funmapped = fopen(UNMAPPED_READS, "r");
@@ -348,14 +350,12 @@ int main(int argc, const char * argv[]) {
             fclose(comp_info.fsam);
             fclose(comp_info.fref);
             fclose(comp_info.funmapped);
-            fclose(comp_info.fcomp);
             time(&end_main);
             break;
                             }
         case REMOTE_DECOMPRESSION:
             comp_info.fsam = fopen(output_name, "w");
             comp_info.fref = fopen ( ref_name , "r" );
-            comp_info.fcomp = NULL;
             if ( comp_info.fref == NULL || comp_info.fsam == NULL ){
                 fputs ("File error while opening ref and sam files\n",stderr); exit (1);
             }

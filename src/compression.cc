@@ -6,12 +6,15 @@
 //  Copyright (c) 2014 Mikel Hernaez. All rights reserved.
 //
 
+#include <string>
 #include <stdio.h>
 #include <pthread.h>
 #include <time.h>
 #include <stdbool.h>
 #include "sam_block.h"
 #include "read_compression.h"
+
+#define BLOCK_SIZE 10000000
 
 int print_line(struct sam_line_t *sline, uint8_t print_mode, FILE *fs, bool compressing){
     
@@ -53,6 +56,9 @@ int print_line(struct sam_line_t *sline, uint8_t print_mode, FILE *fs) {
     return print_line(sline, print_mode, fs, false);
 }
 
+/*
+ * Returns -1 on error, 0 for unmapped read, and 1 for mapped read
+ */
 int compress_line(Arithmetic_stream as, sam_block samBlock, FILE *funmapped, uint8_t lossiness)  {
     
     static bool unmapped_reads = false;
@@ -60,7 +66,7 @@ int compress_line(Arithmetic_stream as, sam_block samBlock, FILE *funmapped, uin
     
     // Load the data from the file
     if(load_sam_line(samBlock))
-        return 0;
+        return -1;
     
     // If read is unmapped and reference name is *, we assume that all the remaining
     // lines are unmapped and have reference name *.
@@ -96,7 +102,7 @@ int compress_line(Arithmetic_stream as, sam_block samBlock, FILE *funmapped, uin
             if (i < samBlock->aux->aux_cnt - 1) fputc('\t', funmapped);
         }
         fputc('\n', funmapped); 
-        return 1;
+        return 0;
     } else {
         if (unmapped_reads) {
             fprintf(stderr, "compress_line error: There is a mapped read following a read that is not mapped to any chromosome. This probably means that the sam file is not correctly sorted.\n");
@@ -243,11 +249,12 @@ int decompress_most_common_list(Arithmetic_stream as, aux_block aux)
 
 void* compress(void *thread_info){
     
-    uint64_t compress_file_size = 0;
+    long long compress_file_size = 0;
     clock_t begin;
     clock_t ticks;
     
-    unsigned long long lineCtr = 0;
+    long long lineCtr = 0;
+    long long unmapped_reads = 0;
     
     printf("Compressing...\n");
     begin = clock();
@@ -275,12 +282,23 @@ void* compress(void *thread_info){
     
     compress_file_size += encoder_last_step(as);
 
-    as = alloc_arithmetic_stream(info.mode, info.fcomp);
+    std::string next_block = std::to_string(lineCtr / BLOCK_SIZE);
+    FILE *fcomp = fopen(next_block.c_str(), "w");
+    as = alloc_arithmetic_stream(info.mode, fcomp);
+    
 
-    while (compress_line(as, samBlock, info.funmapped, info.lossiness)) {
+    while (true) {
+        int result = compress_line(as, samBlock, info.funmapped, info.lossiness);
+        if (result == -1) break;
+        else if (result == 0) unmapped_reads += 1;
         ++lineCtr;
-        if (lineCtr % 1000000 == 0) {
-          printf("[cbc] compressed %zu lines\n", lineCtr);
+        if (lineCtr % BLOCK_SIZE == 0) {
+            printf("[cbc] compressed %lld lines\n", lineCtr);
+            compress_file_size += encoder_last_step(as);
+            fclose(fcomp);
+            next_block = std::to_string(lineCtr / BLOCK_SIZE);
+            fcomp = fopen(next_block.c_str(), "w");
+            as = alloc_arithmetic_stream(info.mode, fcomp);
         }
     }
     
@@ -289,6 +307,8 @@ void* compress(void *thread_info){
     
     //end the compression
     compress_file_size += encoder_last_step(as);
+
+    fprintf(info.size, "%lld", lineCtr - unmapped_reads);
     
     printf("Final Size: %lld\n", compress_file_size);
     
@@ -303,7 +323,6 @@ void* compress(void *thread_info){
 
 void* decompress(void *thread_info){
     
-    uint64_t n = 0;
     clock_t begin = clock();
     clock_t ticks;
     
@@ -324,13 +343,20 @@ void* decompress(void *thread_info){
         initialize_qv_model(as, samBlock->QVs, DECOMPRESSION);
     }
     
-    as = alloc_arithmetic_stream(info->mode, info->fcomp);
+    long long n_reads = 0;
+    fscanf(info->size, "%lld", &n_reads);
+    FILE *fcomp = NULL;
     // Decompress the blocks
-    while(decompress_line(as, samBlock, info->lossiness)){
-        n++;
+    for (long long i = 0; i < n_reads; i++) {
+        if (i % BLOCK_SIZE == 0) {
+            if (i > 0) fclose(fcomp);
+            std::string next_block = std::to_string(i / BLOCK_SIZE);
+            fcomp = fopen(next_block.c_str(), "r");
+            as = alloc_arithmetic_stream(info->mode, fcomp);
+            printf("[cbc] decompressed %lld lines\n", i);
+        }
+        decompress_line(as, samBlock, info->lossiness);
     }
-    
-    n += samBlock->block_length;
     
     ticks = clock() - begin;
     printf("Decompression (mapped reads only) took %f\n", ((float)ticks)/CLOCKS_PER_SEC);
