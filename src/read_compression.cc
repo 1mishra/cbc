@@ -22,7 +22,7 @@ uint32_t cumsumP = 0;
 /************************
  * Compress the read
  **********************/
-uint32_t compress_read(Arithmetic_stream as, read_models models, read_line samLine, uint8_t chr_change){
+uint32_t compress_read(Arithmetic_stream as, read_models models, read_line samLine, uint8_t chr_change, bool new_block){
     int tempF, PosDiff, chrPos, k;
     uint32_t mask;
     uint16_t maskedReadVal;
@@ -34,12 +34,12 @@ uint32_t compress_read(Arithmetic_stream as, read_models models, read_line samLi
     }
     
     // Compress sam line
-    PosDiff = compress_pos(as, models->pos, models->pos_alpha, samLine->pos, chr_change);
+    //PosDiff = compress_pos(as, models->pos, models->pos_alpha, samLine->pos, chr_change);
     tempF = compress_flag(as, models->flag, samLine->invFlag);
     //tempF = compress_flag(as, models->flag, 0);
-    chrPos = compress_edits(as, models, samLine->edits, samLine->cigar, samLine->read, samLine->pos, PosDiff, tempF, &(samLine->cigarFlags));
+    //chrPos = compress_edits(as, models, samLine->edits, samLine->cigar, samLine->read, samLine->pos, PosDiff, tempF, &(samLine->cigarFlags));
     
-    if (VERIFY) assert(samLine->pos  == chrPos);
+    //if (VERIFY) assert(samLine->pos  == chrPos);
 
     return 1;
 }

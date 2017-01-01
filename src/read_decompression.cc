@@ -62,7 +62,7 @@ int store_reference_in_memory(FILE* refFile){
 /************************
  * Decompress the read
  **********************/
-uint32_t decompress_read(Arithmetic_stream as, sam_block sb, uint8_t chr_change, struct sam_line_t *sline){
+uint32_t decompress_read(Arithmetic_stream as, sam_block sb, uint8_t chr_change, struct sam_line_t *sline, bool new_block){
     
     int invFlag, tempP, k;
     uint32_t readLen;
@@ -79,11 +79,11 @@ uint32_t decompress_read(Arithmetic_stream as, sam_block sb, uint8_t chr_change,
     }
     
     // Decompress the read
-    tempP = decompress_pos(as, models->pos, models->pos_alpha, chr_change, &sline->pos);
+    //tempP = decompress_pos(as, models->pos, models->pos_alpha, chr_change, &sline->pos);
     
     invFlag = decompress_flag(as, models->flag, &sline->flag);
     
-    reconstruct_read(as, models, tempP, invFlag, sline->read, readLen, chr_change, sline->cigar);
+    //reconstruct_read(as, models, tempP, invFlag, sline->read, readLen, chr_change, sline->cigar);
     
     return invFlag;
 }

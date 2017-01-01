@@ -35,7 +35,7 @@ int print_line(struct sam_line_t *sline, uint8_t print_mode, FILE *fs, bool comp
             fprintf(fs, "%s\t", sline->rnext); 
             fprintf(fs, "%d\t", sline->pnext);
             fprintf(fs, "%d\t", sline->tlen);
-            fprintf(fs, "%s\t", sline->read);
+            //fprintf(fs, "%s\t", sline->read);
             // need to re-reverse quality scores
             if ((sline->flag & 16) == 16 && !compressing) {
                 for (i = sline->readLength - 1; i >= 0; --i)
@@ -131,7 +131,7 @@ int compress_line(Arithmetic_stream as, sam_block samBlock, FILE *funmapped, uin
 
     compress_rnext(as, samBlock->rnext->models, *samBlock->rnext->rnext, new_block);
 
-    //compress_read(as, samBlock->reads->models, samBlock->reads->lines, chr_change);
+    compress_read(as, samBlock->reads->models, samBlock->reads->lines, chr_change, new_block);
     
     compress_cigar(as, samBlock->reads->models, samBlock->reads->lines->cigar, samBlock->reads->lines->cigarFlags);
 
@@ -188,7 +188,7 @@ int decompress_line(Arithmetic_stream as, sam_block samBlock, uint8_t lossiness,
 
     decompress_rnext(as, samBlock->rnext->models, sline.rnext, new_block); 
 
-    //decompression_flag = decompress_read(as,samBlock, chr_change, &sline);
+    decompression_flag = decompress_read(as,samBlock, chr_change, &sline, new_block);
     
     decompress_cigar(as, samBlock, &sline);
 
