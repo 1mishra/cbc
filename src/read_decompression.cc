@@ -10,6 +10,7 @@
 #include <ctype.h>
 #include <cinttypes>
 #include <iostream>
+#include <stdexcept>
 
 #define DEBUG false
 #define VERIFY false
@@ -20,10 +21,10 @@ using namespace std;
 //                  STORE REFERENCE IN MEMORY                   //
 //                                                              //
 //**************************************************************//
-int store_reference_in_memory(FILE* refFile){
+string store_reference_in_memory(FILE* refFile){
+    static string cur_name = "";
     uint32_t letterCount, endoffile = 1;
-    char header[1024];
-    char buf[1024];
+    char buf[1025];
     
     reference = (char *) malloc(MAX_BP_CHR*sizeof(char));
     
@@ -31,13 +32,19 @@ int store_reference_in_memory(FILE* refFile){
     letterCount = 0;
     
     // Remove the first header
-    if (ftell(refFile) == 0) {
-      fgets(header, sizeof(header), refFile);
-    }
+    fgets(buf, sizeof(buf), refFile);
+    cur_name = string(buf).substr(1);
+    cur_name.pop_back();
     
     while (fgets(buf, 1024, refFile)) {
       if (buf[0] == '>' || reference[0] == '@') {
         endoffile = 0;
+        int ch_read = 0;
+        for (int i = 0; i < 1024; i++) {
+            ch_read++;
+            if (buf[i] == '\n') break;
+        }
+        fseek(refFile, -ch_read, SEEK_CUR);
         break;
       }
       for (int i = 0; i < 1024; i++) {
@@ -51,11 +58,9 @@ int store_reference_in_memory(FILE* refFile){
 
     reference = (char *) realloc(reference, letterCount + 1);
     
-    if (endoffile)
-        return END_GENOME_FLAG;
+    if (endoffile) throw std::out_of_range("Read past end of genome file.");
     
-    return letterCount;
-    
+    return cur_name;
 }
 
 

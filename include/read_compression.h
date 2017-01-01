@@ -17,6 +17,7 @@
 #include "id_compression.h"
 #include <cstdint>
 #include <limits>
+#include <string>
 
 #define MAX_BP_CHR 300000000
 #define CHR_CHANGE_FLAG 0xffffffff
@@ -75,7 +76,7 @@ uint32_t compress_read(Arithmetic_stream as, read_models models, read_line samLi
 uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos, uint8_t invFlag, char *read, uint32_t readLen, uint8_t chr_change, char *recCigar, bool new_block);
 uint32_t decompress_read(Arithmetic_stream as, sam_block sb, uint8_t chr_change, struct sam_line_t *sline, bool new_block);
 uint32_t decompress_cigar(Arithmetic_stream as, sam_block sb, struct sam_line_t *sline);
-int store_reference_in_memory(FILE* refFile);
+std::string store_reference_in_memory(FILE* refFile);
 
 void foo();
 

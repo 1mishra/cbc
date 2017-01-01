@@ -172,10 +172,10 @@ int decompress_line(Arithmetic_stream as, sam_block samBlock, uint8_t lossiness,
             
         //printf("Chromosome %d decompressed.\n", ++chrCtr);
             
-        cur_rname = std::string(sline.rname);
-        // Store Ref sequence in memory
-        store_reference_in_memory(samBlock->fref);
-            
+        while (cur_rname != std::string(sline.rname)) {
+            cur_rname = store_reference_in_memory(samBlock->fref);         
+        }
+
         // reset cumsumP
         cumsumP = 0;
 
