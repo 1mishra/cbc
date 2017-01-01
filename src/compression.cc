@@ -140,11 +140,10 @@ int compress_line(Arithmetic_stream as, sam_block samBlock, FILE *funmapped, uin
     compress_pnext_raw(as, samBlock->pnext->models,  samBlock->reads->lines->pos, *samBlock->pnext->pnext);
     compress_aux(as, samBlock->aux->models, samBlock->aux->aux_str, samBlock->aux->aux_cnt, samBlock->aux);
 
-    /*
     if (lossiness == LOSSY)
         QVs_compress(as, samBlock->QVs, samBlock->QVs->qArray);
     else
-        QVs_compress_lossless(as, samBlock->QVs->model, samBlock->QVs->qv_lines);*/
+        QVs_compress_lossless(as, samBlock->QVs->model, samBlock->QVs->qv_lines);
     return 1;
 }
 
@@ -198,13 +197,14 @@ int decompress_line(Arithmetic_stream as, sam_block samBlock, uint8_t lossiness,
     decompress_pnext(as, samBlock->pnext->models, sline.pos, sline.tlen, samBlock->read_length, &sline.pnext, sline.rnext[0] != '=', NULL);
 
     decompress_aux(as, samBlock->aux, sline.aux);
-    /*
     if (lossiness == LOSSY) {
-            QVs_decompress(as, samBlock->QVs, decompression_flag, sline.quals);
+        QVs_decompress(as, samBlock->QVs, decompression_flag, sline.quals);
     }
     else
         QVs_decompress_lossless(as, samBlock->QVs, decompression_flag, sline.quals);
-    print_line(&sline, 0, samBlock->fs);*/
+
+    print_line(&sline, 0, samBlock->fs);
+
     return 1;
 }
 

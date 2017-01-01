@@ -325,6 +325,11 @@ void reset_sam_block(sam_block sb) {
     sb->rnext->models = alloc_rnext_models_t();
     sb->pnext->models = alloc_pnext_models_t();
     sb->tlen->models = alloc_tlen_models_t();
+    uint32_t rescale = 1 << 20;
+    sb->codebook_model = initialize_stream_model_codebook(rescale);
+    sb->QVs->model = alloc_stream_model_qv(sb->read_length, QV_ALPHABET_SIZE + 1, rescale);
+    sb->QVs->codebook_model = sb->codebook_model;
+    sb->QVs->well.n = 0;
 
 }
 
