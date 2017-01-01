@@ -37,7 +37,7 @@ extern uint32_t cumsumP;
 // Protorypes for the compression functions
 uint32_t compress_flag(Arithmetic_stream a, stream_model *F, uint16_t flag);
 uint32_t compress_pos_alpha(Arithmetic_stream as, stream_model *PA, uint32_t x);
-uint32_t compress_pos(Arithmetic_stream as, stream_model *P, stream_model *PA, uint32_t pos, uint8_t chr_change);
+uint32_t compress_pos(Arithmetic_stream as, stream_model *P, stream_model *PA, uint32_t pos, uint8_t chr_change, bool new_block);
 uint32_t compress_match(Arithmetic_stream a, stream_model *M, uint8_t match, uint32_t P);
 uint32_t compress_snps(Arithmetic_stream a, stream_model *S, uint8_t numSnps);
 uint32_t compress_indels(Arithmetic_stream a, stream_model *I, uint8_t numIndels);
@@ -63,7 +63,7 @@ void absolute_to_relative(uint32_t *Dels, uint32_t numDels, ins *Insers, uint32_
 // Prototypes for tghe decompression functions
 uint32_t decompress_flag(Arithmetic_stream a, stream_model *F, uint32_t *flag);
 uint32_t decompress_pos_alpha(Arithmetic_stream as, stream_model *PA);
-uint32_t decompress_pos(Arithmetic_stream as, stream_model *P, stream_model *PA, uint8_t chr_change, uint32_t *p);
+uint32_t decompress_pos(Arithmetic_stream as, stream_model *P, stream_model *PA, uint8_t chr_change, uint32_t *p, bool new_block);
 uint32_t decompress_match(Arithmetic_stream a, stream_model *M, uint32_t P);
 uint32_t decompress_snps(Arithmetic_stream a, stream_model *S);
 uint32_t decompress_indels(Arithmetic_stream a, stream_model *I);

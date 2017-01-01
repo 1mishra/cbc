@@ -34,7 +34,7 @@ uint32_t compress_read(Arithmetic_stream as, read_models models, read_line samLi
     }
     
     // Compress sam line
-    //PosDiff = compress_pos(as, models->pos, models->pos_alpha, samLine->pos, chr_change);
+    PosDiff = compress_pos(as, models->pos, models->pos_alpha, samLine->pos, chr_change, new_block);
     tempF = compress_flag(as, models->flag, samLine->invFlag);
     //tempF = compress_flag(as, models->flag, 0);
     //chrPos = compress_edits(as, models, samLine->edits, samLine->cigar, samLine->read, samLine->pos, PosDiff, tempF, &(samLine->cigarFlags));
@@ -111,7 +111,7 @@ uint32_t compress_pos_alpha(Arithmetic_stream as, stream_model *PA, uint32_t x){
 /***********************
  * Compress the Position
  **********************/
-uint32_t compress_pos(Arithmetic_stream as, stream_model *P, stream_model *PA, uint32_t pos, uint8_t chr_change){
+uint32_t compress_pos(Arithmetic_stream as, stream_model *P, stream_model *PA, uint32_t pos, uint8_t chr_change, bool new_block){
     
     static uint32_t prevPos = 0;
     enum {SMALL_STEP = 0, BIG_STEP = 1};
@@ -121,7 +121,7 @@ uint32_t compress_pos(Arithmetic_stream as, stream_model *P, stream_model *PA, u
     // i.e., SMALL_STEP and BIG_STEP
     
     // Check if we are changing chromosomes.
-    if (chr_change)
+    if (chr_change || new_block)
         prevPos = 0;
     
     

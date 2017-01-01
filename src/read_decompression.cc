@@ -79,7 +79,7 @@ uint32_t decompress_read(Arithmetic_stream as, sam_block sb, uint8_t chr_change,
     }
     
     // Decompress the read
-    //tempP = decompress_pos(as, models->pos, models->pos_alpha, chr_change, &sline->pos);
+    tempP = decompress_pos(as, models->pos, models->pos_alpha, chr_change, &sline->pos, new_block);
     
     invFlag = decompress_flag(as, models->flag, &sline->flag);
     
@@ -180,7 +180,7 @@ uint32_t decompress_pos_alpha(Arithmetic_stream as, stream_model *PA){
 /**************************
  * Decompress the Position
  *************************/
-uint32_t decompress_pos(Arithmetic_stream as, stream_model *P, stream_model *PA, uint8_t chr_change, uint32_t *p){
+uint32_t decompress_pos(Arithmetic_stream as, stream_model *P, stream_model *PA, uint8_t chr_change, uint32_t *p, bool new_block){
     
     static uint32_t prevPos = 0;
     
@@ -189,7 +189,7 @@ uint32_t decompress_pos(Arithmetic_stream as, stream_model *P, stream_model *PA,
     enum {SMALL_STEP = 0, BIG_STEP = 1};
     
     // Check if we are changing chromosomes.
-    if (chr_change)
+    if (chr_change || new_block)
         prevPos = 0;
     
     // Read from the AS and get the position
