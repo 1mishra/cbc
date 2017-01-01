@@ -16,7 +16,7 @@
 #include "sam_block.h"
 #include "read_compression.h"
 
-#define BLOCK_SIZE 1
+#define BLOCK_SIZE 1 
 
 int print_line(struct sam_line_t *sline, uint8_t print_mode, FILE *fs, bool compressing){
     
@@ -175,7 +175,6 @@ int decompress_line(Arithmetic_stream as, sam_block samBlock, uint8_t lossiness,
         while (cur_rname != std::string(sline.rname)) {
             cur_rname = store_reference_in_memory(samBlock->fref);         
         }
-
         // reset cumsumP
         cumsumP = 0;
 
@@ -381,6 +380,7 @@ void* decompress(void *thread_info){
     } else {
         for (size_t i = 0; i < block_sizes.size(); i++) {
             decompress_block(info, samBlock, i, block_sizes[i]);
+            reset_sam_block(samBlock);
             printf("[cbc] decompressed block %zu\n", i);
         }
     }

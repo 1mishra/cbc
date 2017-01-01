@@ -520,6 +520,7 @@ int decompress_rname(Arithmetic_stream as, rname_models models, char *rname, boo
     
     if (chr_change) {
         
+
         while ( (ch = decompress_uint8t(as, models->rname[prevChar])) ) {
             
             if (ch == '\n') {
@@ -530,7 +531,6 @@ int decompress_rname(Arithmetic_stream as, rname_models models, char *rname, boo
             *rname = ch, rname++;
         }
         *rname = '\0';
-
     }
     
     return chr_change;

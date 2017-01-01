@@ -58,8 +58,6 @@ string store_reference_in_memory(FILE* refFile){
 
     reference = (char *) realloc(reference, letterCount + 1);
     
-    if (endoffile) throw std::out_of_range("Read past end of genome file.");
-    
     return cur_name;
 }
 
