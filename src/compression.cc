@@ -35,7 +35,7 @@ int print_line(struct sam_line_t *sline, uint8_t print_mode, FILE *fs, bool comp
             fprintf(fs, "%s\t", sline->rnext); 
             fprintf(fs, "%d\t", sline->pnext);
             fprintf(fs, "%d\t", sline->tlen);
-            //fprintf(fs, "%s\t", sline->read);
+            fprintf(fs, "%s\t", sline->read);
             // need to re-reverse quality scores
             if ((sline->flag & 16) == 16 && !compressing) {
                 for (i = sline->readLength - 1; i >= 0; --i)
@@ -65,6 +65,7 @@ int compress_line(Arithmetic_stream as, sam_block samBlock, FILE *funmapped, uin
     
     static bool unmapped_reads = false;
     uint8_t chr_change;
+    static std::string cur_rname = "";
     
     // Load the data from the file
     if(load_sam_line(samBlock))
@@ -116,8 +117,8 @@ int compress_line(Arithmetic_stream as, sam_block samBlock, FILE *funmapped, uin
     
     chr_change = compress_rname(as, samBlock->rnames->models, *samBlock->rnames->rnames, new_block);
         
-    if (chr_change == 1){
-
+    if (chr_change == 1 && cur_rname != std::string(*samBlock->rnames->rnames)) {
+        cur_rname = std::string(*samBlock->rnames->rnames);
         // Store Ref sequence in memory
         store_reference_in_memory(samBlock->fref);
         // Reset cumsumP
@@ -150,10 +151,10 @@ int compress_line(Arithmetic_stream as, sam_block samBlock, FILE *funmapped, uin
 int decompress_line(Arithmetic_stream as, sam_block samBlock, uint8_t lossiness, bool new_block) {
     
     int32_t chr_change = 0;
-    
     uint32_t decompression_flag = 0;
-    
     struct sam_line_t sline;
+    static std::string cur_rname = "";
+
     
     
     //This is only for fixed length? i think so.
@@ -167,10 +168,11 @@ int decompress_line(Arithmetic_stream as, sam_block samBlock, uint8_t lossiness,
     if (chr_change == -1)
         return 0;
         
-    if (chr_change == 1){
+    if (chr_change == 1 && cur_rname != std::string(sline.rname)) {
             
         //printf("Chromosome %d decompressed.\n", ++chrCtr);
             
+        cur_rname = std::string(sline.rname);
         // Store Ref sequence in memory
         store_reference_in_memory(samBlock->fref);
             

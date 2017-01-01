@@ -70,6 +70,9 @@ uint32_t decompress_read(Arithmetic_stream as, sam_block sb, uint8_t chr_change,
     
     read_models models = sb->reads->models;
     
+    if (new_block) {
+        memset(snpInRef, 0, sizeof(snpInRef));
+    }
     
     // Decompress read length (4 uint8)
     readLen = 0;
@@ -83,7 +86,7 @@ uint32_t decompress_read(Arithmetic_stream as, sam_block sb, uint8_t chr_change,
     
     invFlag = decompress_flag(as, models->flag, &sline->flag);
     
-    //reconstruct_read(as, models, tempP, invFlag, sline->read, readLen, chr_change, sline->cigar);
+    reconstruct_read(as, models, tempP, invFlag, sline->read, readLen, chr_change, sline->cigar, new_block);
     
     return invFlag;
 }
@@ -227,10 +230,11 @@ uint32_t decompress_pos(Arithmetic_stream as, stream_model *P, stream_model *PA,
 /****************************
  * Decompress the match
  *****************************/
-uint32_t decompress_match(Arithmetic_stream a, stream_model *M, uint32_t P){
+uint32_t decompress_match(Arithmetic_stream a, stream_model *M, uint32_t P, bool new_block){
     
     uint32_t ctx = 0;
     static uint8_t  prevM = 0;
+    if (new_block) prevM = 0;
     
     uint8_t match = 0;
     
@@ -378,7 +382,7 @@ static void handle_insertions(char *ref, char *target, uint32_t *start_copy, int
 /*****************************************
  * Reconstruct the read
  ******************************************/
-uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos, uint8_t invFlag, char *read, uint32_t readLen, uint8_t chr_change, char *recCigar){
+uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos, uint8_t invFlag, char *read, uint32_t readLen, uint8_t chr_change, char *recCigar, bool new_block){
     
     unsigned int numIns = 0, numDels = 0, numSnps = 0, delPos = 0, ctrPos = 0, snpPos = 0, insPos = 0;
     uint32_t prev_pos = 0, delta = 0, deltaPos = 0;
@@ -401,7 +405,7 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
     
     read[models->read_length] = '\0';
     // reset prevPos if the chromosome changed
-    if (chr_change == 1) {
+    if (chr_change == 1 || new_block) {
       prevPos = 0;
     }
 
@@ -412,7 +416,7 @@ uint32_t reconstruct_read(Arithmetic_stream as, read_models models, uint32_t pos
     }
     prevPos = pos;
     
-    match = decompress_match(as, models->match, deltaPos);
+    match = decompress_match(as, models->match, deltaPos, new_block);
 
     // cumsumP is equal to pos
     cumsumP = pos;
