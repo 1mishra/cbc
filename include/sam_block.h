@@ -10,6 +10,7 @@
 #define XC_s2fastqIO_sam_line_h
 
 #include <stdio.h>
+#include <stdbool.h>
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -79,6 +80,7 @@ struct compressor_info_t{
     FILE *metadata;
     FILE *size;
     uint8_t mode;
+    long block;
     struct qv_options_t *qv_opts;
     uint8_t lossiness;
 };
@@ -383,7 +385,7 @@ aux_models alloc_aux_models_t();
 
 stream_model *alloc_stream_model_qv(uint32_t read_length, uint32_t input_alphabet_size, uint32_t rescale);
 
-
+void reset_sam_block(sam_block sb);
 sam_block alloc_sam_models(Arithmetic_stream as, FILE * fin, FILE *fref, struct qv_options_t *qv_opts, uint8_t decompression);
 read_block alloc_read_block_t(uint32_t read_length);
 qv_block alloc_qv_block_t(struct qv_options_t *opts, uint32_t read_length);
@@ -428,8 +430,8 @@ int decompress_rname(Arithmetic_stream as, rname_models models, char *rname);
 int compress_mapq(Arithmetic_stream as, mapq_models models, uint8_t mapq);
 int decompress_mapq(Arithmetic_stream as, mapq_models models, uint8_t *mapq);
 
-int compress_rnext(Arithmetic_stream as, rnext_models models, char *rnext);
-int decompress_rnext(Arithmetic_stream as, rnext_models models, char *rnext);
+int compress_rnext(Arithmetic_stream as, rnext_models models, char *rnext, bool new_block);
+int decompress_rnext(Arithmetic_stream as, rnext_models models, char *rnext, bool new_block);
 
 int compress_pnext(Arithmetic_stream as, pnext_models models, uint32_t pos, int32_t tlen, uint32_t pnext, uint8_t rname_rnextDiff, char* cigar);
 int decompress_pnext(Arithmetic_stream as, pnext_models models, uint32_t pos, int32_t tlen, uint32_t readLength, uint32_t* pnext, uint8_t rname_rnextDiff, char* cigar);

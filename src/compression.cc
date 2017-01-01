@@ -6,6 +6,8 @@
 //  Copyright (c) 2014 Mikel Hernaez. All rights reserved.
 //
 
+#include <iostream>
+#include <vector>
 #include <string>
 #include <stdio.h>
 #include <pthread.h>
@@ -14,7 +16,7 @@
 #include "sam_block.h"
 #include "read_compression.h"
 
-#define BLOCK_SIZE 10000000
+#define BLOCK_SIZE 1
 
 int print_line(struct sam_line_t *sline, uint8_t print_mode, FILE *fs, bool compressing){
     
@@ -59,7 +61,7 @@ int print_line(struct sam_line_t *sline, uint8_t print_mode, FILE *fs) {
 /*
  * Returns -1 on error, 0 for unmapped read, and 1 for mapped read
  */
-int compress_line(Arithmetic_stream as, sam_block samBlock, FILE *funmapped, uint8_t lossiness)  {
+int compress_line(Arithmetic_stream as, sam_block samBlock, FILE *funmapped, uint8_t lossiness, bool new_block)  {
     
     static bool unmapped_reads = false;
     uint8_t chr_change;
@@ -112,7 +114,7 @@ int compress_line(Arithmetic_stream as, sam_block samBlock, FILE *funmapped, uin
         
     // Compress sam line
     
-    chr_change = compress_rname(as, samBlock->rnames->models, *samBlock->rnames->rnames);
+    chr_change = compress_rname(as, samBlock->rnames->models, *samBlock->rnames->rnames, new_block);
         
     if (chr_change == 1){
 
@@ -127,25 +129,26 @@ int compress_line(Arithmetic_stream as, sam_block samBlock, FILE *funmapped, uin
 
     compress_mapq(as, samBlock->mapq->models, *samBlock->mapq->mapq);
 
-    compress_rnext(as, samBlock->rnext->models, *samBlock->rnext->rnext);
+    compress_rnext(as, samBlock->rnext->models, *samBlock->rnext->rnext, new_block);
 
-    compress_read(as, samBlock->reads->models, samBlock->reads->lines, chr_change);
+    //compress_read(as, samBlock->reads->models, samBlock->reads->lines, chr_change);
     
-    compress_cigar(as, samBlock->reads->models, samBlock->reads->lines->cigar, samBlock->reads->lines->cigarFlags);
+    //compress_cigar(as, samBlock->reads->models, samBlock->reads->lines->cigar, samBlock->reads->lines->cigarFlags);
 
     compress_tlen(as, samBlock->tlen->models, *samBlock->tlen->tlen);
 
     compress_pnext_raw(as, samBlock->pnext->models,  samBlock->reads->lines->pos, *samBlock->pnext->pnext);
     compress_aux(as, samBlock->aux->models, samBlock->aux->aux_str, samBlock->aux->aux_cnt, samBlock->aux);
 
+    /*
     if (lossiness == LOSSY)
         QVs_compress(as, samBlock->QVs, samBlock->QVs->qArray);
     else
-        QVs_compress_lossless(as, samBlock->QVs->model, samBlock->QVs->qv_lines);
+        QVs_compress_lossless(as, samBlock->QVs->model, samBlock->QVs->qv_lines);*/
     return 1;
 }
 
-int decompress_line(Arithmetic_stream as, sam_block samBlock, uint8_t lossiness) {
+int decompress_line(Arithmetic_stream as, sam_block samBlock, uint8_t lossiness, bool new_block) {
     
     int32_t chr_change = 0;
     
@@ -160,8 +163,8 @@ int decompress_line(Arithmetic_stream as, sam_block samBlock, uint8_t lossiness)
     //printf("Decompressing the block...\n");
     // Loop over the lines of the sam block
         
-    chr_change = decompress_rname(as, samBlock->rnames->models, sline.rname);
-        
+    chr_change = decompress_rname(as, samBlock->rnames->models, sline.rname, new_block);
+
     if (chr_change == -1)
         return 0;
         
@@ -181,26 +184,27 @@ int decompress_line(Arithmetic_stream as, sam_block samBlock, uint8_t lossiness)
 
     decompress_id(as, samBlock->IDs->models, sline.ID);
 
+
     decompress_mapq(as, samBlock->mapq->models, &sline.mapq);
 
-    decompress_rnext(as, samBlock->rnext->models, sline.rnext); 
+    decompress_rnext(as, samBlock->rnext->models, sline.rnext, new_block); 
 
-    decompression_flag = decompress_read(as,samBlock, chr_change, &sline);
+    //decompression_flag = decompress_read(as,samBlock, chr_change, &sline);
     
-    decompress_cigar(as, samBlock, &sline);
+    //decompress_cigar(as, samBlock, &sline);
 
     decompress_tlen(as, samBlock->tlen->models, &sline.tlen);
 
     decompress_pnext(as, samBlock->pnext->models, sline.pos, sline.tlen, samBlock->read_length, &sline.pnext, sline.rnext[0] != '=', NULL);
 
     decompress_aux(as, samBlock->aux, sline.aux);
+    /*
     if (lossiness == LOSSY) {
             QVs_decompress(as, samBlock->QVs, decompression_flag, sline.quals);
     }
     else
         QVs_decompress_lossless(as, samBlock->QVs, decompression_flag, sline.quals);
-    print_line(&sline, 0, samBlock->fs);
-
+    print_line(&sline, 0, samBlock->fs);*/
     return 1;
 }
 
@@ -245,8 +249,6 @@ int decompress_most_common_list(Arithmetic_stream as, aux_block aux)
     return 1;
 }
 
-
-
 void* compress(void *thread_info){
     
     long long compress_file_size = 0;
@@ -255,6 +257,7 @@ void* compress(void *thread_info){
     
     long long lineCtr = 0;
     long long unmapped_reads = 0;
+    long long cur_block = 0;
     
     printf("Compressing...\n");
     begin = clock();
@@ -286,30 +289,40 @@ void* compress(void *thread_info){
     FILE *fcomp = fopen(next_block.c_str(), "w");
     as = alloc_arithmetic_stream(info.mode, fcomp);
     
+    bool new_block = true;
 
     while (true) {
-        int result = compress_line(as, samBlock, info.funmapped, info.lossiness);
+        int result = compress_line(as, samBlock, info.funmapped, info.lossiness, new_block);
+        new_block = false;
         if (result == -1) break;
         else if (result == 0) unmapped_reads += 1;
+        else cur_block++;
         ++lineCtr;
+
         if (lineCtr % BLOCK_SIZE == 0) {
             printf("[cbc] compressed %lld lines\n", lineCtr);
+        }
+        if (cur_block == BLOCK_SIZE) {
             compress_file_size += encoder_last_step(as);
             fclose(fcomp);
             next_block = std::to_string(lineCtr / BLOCK_SIZE);
             fcomp = fopen(next_block.c_str(), "w");
             as = alloc_arithmetic_stream(info.mode, fcomp);
+            fprintf(info.size, "%lld\n", cur_block);
+            cur_block = 0;
+            new_block = true;
+            reset_sam_block(samBlock);
         }
     }
     
     // Check if we are in the last block
-    compress_rname(as, samBlock->rnames->models, "\n");
+    compress_rname(as, samBlock->rnames->models, "\n", false);
     
     //end the compression
     compress_file_size += encoder_last_step(as);
 
-    fprintf(info.size, "%lld", lineCtr - unmapped_reads);
-    
+    fprintf(info.size, "%lld", cur_block);
+
     printf("Final Size: %lld\n", compress_file_size);
     
     ticks = clock() - begin;
@@ -320,6 +333,17 @@ void* compress(void *thread_info){
     return NULL;
 }
 
+void decompress_block(struct compressor_info_t *info, sam_block samBlock, size_t block, size_t block_size) {
+    std::string block_str = std::to_string(block);
+    FILE *fcomp = fopen(block_str.c_str(), "r");
+    Arithmetic_stream as = alloc_arithmetic_stream(info->mode, fcomp);
+    bool new_block = true;
+    for (size_t i = 0; i < block_size; i++) {
+        decompress_line(as, samBlock, info->lossiness, new_block);
+        new_block = false;
+    }
+    fclose(fcomp);
+}
 
 void* decompress(void *thread_info){
     
@@ -329,6 +353,8 @@ void* decompress(void *thread_info){
 
     struct compressor_info_t *info = (struct compressor_info_t *)thread_info;
     
+
+    printf("Decompressing block %ld \n", info->block);
     Arithmetic_stream as = alloc_arithmetic_stream(info->mode, info->metadata);
     
     sam_block samBlock = alloc_sam_models(as, info->fsam, info->fref, info->qv_opts, DECOMPRESSION);
@@ -343,19 +369,21 @@ void* decompress(void *thread_info){
         initialize_qv_model(as, samBlock->QVs, DECOMPRESSION);
     }
     
-    long long n_reads = 0;
-    fscanf(info->size, "%lld", &n_reads);
-    FILE *fcomp = NULL;
-    // Decompress the blocks
-    for (long long i = 0; i < n_reads; i++) {
-        if (i % BLOCK_SIZE == 0) {
-            if (i > 0) fclose(fcomp);
-            std::string next_block = std::to_string(i / BLOCK_SIZE);
-            fcomp = fopen(next_block.c_str(), "r");
-            as = alloc_arithmetic_stream(info->mode, fcomp);
-            printf("[cbc] decompressed %lld lines\n", i);
+    std::vector<long> block_sizes;
+    long tmp;
+    while (fscanf(info->size, "%ld", &tmp) == 1) {
+        block_sizes.push_back(tmp);
+        printf("%ld\n", tmp);
+    }
+
+    if (info->block >= 0) {
+        decompress_block(info, samBlock, info->block, block_sizes[info->block]);
+        printf("[cbc] decompressed block %ld\n", info->block);
+    } else {
+        for (size_t i = 0; i < block_sizes.size(); i++) {
+            decompress_block(info, samBlock, i, block_sizes[i]);
+            printf("[cbc] decompressed block %zu\n", i);
         }
-        decompress_line(as, samBlock, info->lossiness);
     }
     
     ticks = clock() - begin;

@@ -36,13 +36,20 @@ int compress_uint8t(Arithmetic_stream as, stream_model model, uint8_t c){
     
 }
 
-int compress_rname(Arithmetic_stream as, rname_models models, char *rname){
+int compress_rname(Arithmetic_stream as, rname_models models, char *rname, bool new_block){
     
     static char prev_name[1024] = {0};
     static int prevChar = 0;
     
     uint32_t ctr = 0;
     
+    if (new_block) {
+        prevChar = 0;
+        for (int i = 0; i < sizeof(prev_name); i++) {
+            prev_name[i] = 0;
+        }
+    }
+
     if(strcmp(rname, prev_name) == 0){
         
         compress_uint8t(as, models->same_ref[0], 0);
@@ -78,11 +85,17 @@ int decompress_mapq(Arithmetic_stream as, mapq_models models, uint8_t *mapq){
     return 0;
 }
 
-int compress_rnext(Arithmetic_stream as, rnext_models models, char *rnext){
+int compress_rnext(Arithmetic_stream as, rnext_models models, char *rnext, bool new_block){
     
     static char prev_name[1024] = {0};
     static int prevChar = 0;
-    
+   
+    if (new_block) {
+        prevChar = 0;
+        for (int i = 0; i < sizeof(prev_name); i++) {
+            prev_name[i] = 0;
+        }
+    }
     uint32_t ctr = 0;
     
     switch (rnext[0]) {
@@ -109,11 +122,17 @@ int compress_rnext(Arithmetic_stream as, rnext_models models, char *rnext){
     return 1;
 }
 
-int decompress_rnext(Arithmetic_stream as, rnext_models models, char *rnext){
+int decompress_rnext(Arithmetic_stream as, rnext_models models, char *rnext, bool new_block){
     
     static char prev_name[1024] = {0};
     static int prevChar = 0;
     
+    if (new_block) {
+        prevChar = 0;
+        for (int i = 0; i < sizeof(prev_name); i++) {
+            prev_name[i] = 0;
+        }
+    }
     uint8_t equal_flag = 0, ch;
     
     uint32_t ctr = 0;
@@ -473,11 +492,18 @@ int compress_id(Arithmetic_stream as, id_models models, char *id){
     return 1;
 }
 
-int decompress_rname(Arithmetic_stream as, rname_models models, char *rname){
+int decompress_rname(Arithmetic_stream as, rname_models models, char *rname, bool new_block){
     
     static char prev_name[1024] = {0};
     static int prevChar = 0;
     
+    if (new_block) {
+        prevChar = 0;
+        for (int i = 0; i < sizeof(prev_name); i++) {
+            prev_name[i] = 0;
+        }
+    }
+
     uint8_t chr_change = 0, ch;
     
     uint32_t ctr = 0;

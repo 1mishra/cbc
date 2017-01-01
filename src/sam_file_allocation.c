@@ -317,6 +317,16 @@ simplified_qv_block alloc_simplified_qv_block_t(struct qv_options_t *opts, uint3
     
 }
 
+void reset_sam_block(sam_block sb) {
+    sb->IDs->models = alloc_id_models_t();
+    sb->aux->models = alloc_aux_models_t();
+    sb->rnames->models = alloc_rname_models_t();
+    sb->mapq->models = alloc_mapq_models_t();
+    sb->rnext->models = alloc_rnext_models_t();
+    sb->pnext->models = alloc_pnext_models_t();
+    sb->tlen->models = alloc_tlen_models_t();
+
+}
 
 sam_block alloc_sam_models(Arithmetic_stream as, FILE * fin, FILE *fref, struct qv_options_t *qv_opts, uint8_t mode){
     

@@ -33,6 +33,7 @@ void usage(const char *name) {
     printf("Options are:\n");
     //printf("\t-q\t\t\t: Store quality values in compressed file (default)\n");
     printf("\t-x\t\t: Regenerate file from compressed file\n");
+    printf("\t-b [integer]\t: Choose a block to decompress\n");
     printf("\t-c [ratio]\t: Compress using [ratio] bits per bit of input entropy per symbol\n");
     printf("\t-d [rate]\t: Decompress and Download file from remote [output]\n");
     printf("\t-u [rate]\t: Compress and Upload file to remote [output]\n");
@@ -79,7 +80,8 @@ void write_headers(FILE *input, FILE *output) {
 int main(int argc, const char * argv[]) {
 
     uint32_t mode, i = 0, file_idx = 0, rc = 0, lossiness = LOSSLESS;
-    
+    long block = -1;
+
     struct qv_options_t opts;
     
     char input_name[1024], output_name[1024], ref_name[1024];
@@ -150,6 +152,13 @@ int main(int argc, const char * argv[]) {
                 else
                     lossiness = LOSSY;
                 opts.mode = MODE_RATIO;
+                i += 2;
+                break;
+            case 'b':
+                if (sscanf(argv[i+1], "%ld", &block) != 1) {
+                    printf("Invalid block argument\n");
+                    exit(1);
+                }
                 i += 2;
                 break;
             // UPLOAD
@@ -266,6 +275,7 @@ int main(int argc, const char * argv[]) {
     
     comp_info.mode = mode;
     comp_info.lossiness = lossiness;
+    comp_info.block = block;
     
     switch (mode) {
         case COMPRESSION: {
@@ -320,36 +330,39 @@ int main(int argc, const char * argv[]) {
 
             change_dir(input_name);
             comp_info.metadata = fopen(METADATA, "r");
-            pid_t pid = fork();
-            if (pid == 0) {
-                char* argv[4];
-                argv[0] = "gzip";
-                argv[1] = "-dfk";
-                argv[2] = ZIPPED_READS;
-                argv[3] = NULL;
-                execvp(argv[0], argv);
-                exit(1);
+            pid_t pid;
+            if (comp_info.block == -1) {
+                pid = fork();
+                if (pid == 0) {
+                    char* argv[4];
+                    argv[0] = "gzip";
+                    argv[1] = "-dfk";
+                    argv[2] = ZIPPED_READS;
+                    argv[3] = NULL;
+                    execvp(argv[0], argv);
+                    exit(1);
+                }
+                FILE *headers_file = fopen(HEADERS, "r");
+                write_headers(headers_file, comp_info.fsam);
+                fclose(headers_file);                                   
             }
 
-            FILE *headers_file = fopen(HEADERS, "r");
-            write_headers(headers_file, comp_info.fsam);
-            fclose(headers_file);
-
             comp_info.qv_opts = &opts;
-            
             decompress((void *)&comp_info);
             fclose(comp_info.size);
 
-            waitpid(pid, NULL, 0);
-            comp_info.funmapped = fopen(UNMAPPED_READS, "r");
-            char c;
-            while ( (c = getc(comp_info.funmapped)) != EOF) {
-                putc(c, comp_info.fsam);
+            if (comp_info.block == -1) {
+                waitpid(pid, NULL, 0);
+                comp_info.funmapped = fopen(UNMAPPED_READS, "r");
+                char c;
+                while ( (c = getc(comp_info.funmapped)) != EOF) {
+                    putc(c, comp_info.fsam);
+                }
+                fclose(comp_info.funmapped);
             }
 
             fclose(comp_info.fsam);
             fclose(comp_info.fref);
-            fclose(comp_info.funmapped);
             time(&end_main);
             break;
                             }
