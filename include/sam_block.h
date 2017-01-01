@@ -421,8 +421,8 @@ stream_model *free_stream_model_qv(struct cond_quantizer_list_t *q_list, stream_
 int compress_most_common_list(Arithmetic_stream as, aux_block aux);
 int decompress_most_common_list(Arithmetic_stream as, aux_block aux);
 
-int compress_id(Arithmetic_stream as, id_models models, char *id);
-int decompress_id(Arithmetic_stream as, id_models model, char *id);
+int compress_id(Arithmetic_stream as, id_models models, char *id, bool new_block);
+int decompress_id(Arithmetic_stream as, id_models model, char *id, bool new_block);
 
 int compress_rname(Arithmetic_stream as, rname_models models, char *rname);
 int decompress_rname(Arithmetic_stream as, rname_models models, char *rname);

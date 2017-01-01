@@ -351,7 +351,7 @@ int decompress_tlen(Arithmetic_stream as, tlen_models models, int32_t* tlen){
 
 
 
-int compress_id(Arithmetic_stream as, id_models models, char *id){
+int compress_id(Arithmetic_stream as, id_models models, char *id, bool new_block){
     
     static char prev_ID[1024] = {0};
     static uint32_t prev_tokens_ptr[1024] = {0};
@@ -361,6 +361,14 @@ int compress_id(Arithmetic_stream as, id_models models, char *id){
     
     char *id_ptr = id, *id_ptr_tok = NULL;
     
+    if (new_block) {
+        for (size_t i = 0; i < sizeof(prev_ID); i++) {
+            prev_ID[i] = 0;
+        }
+        for (size_t i = 0; i < sizeof(prev_tokens_ptr) / sizeof(uint32_t); i++) {
+            prev_tokens_ptr[i] = 0;
+        }
+    }
     while (*id_ptr != 0) {
         match_len += (*id_ptr == prev_ID[prev_tokens_ptr[token_ctr] + token_len]), token_len++;
         id_ptr_tok = id_ptr + 1;
@@ -532,7 +540,7 @@ int decompress_rname(Arithmetic_stream as, rname_models models, char *rname, boo
 
 
 
-int decompress_id(Arithmetic_stream as, id_models model, char *id){
+int decompress_id(Arithmetic_stream as, id_models model, char *id, bool new_block){
     
     static char prev_ID[1024] = {0};
     static uint32_t prev_tokens_ptr[1024] = {0};
@@ -543,7 +551,16 @@ int decompress_id(Arithmetic_stream as, id_models model, char *id){
     uint32_t delta = 0;
     
     enum token_type tok;
-    
+    if (new_block) {
+        for (size_t i = 0; i < sizeof(prev_ID); i++) {
+            prev_ID[i] = 0;
+        }
+        for (size_t i = 0; i < sizeof(prev_tokens_ptr) / sizeof(uint32_t); i++) {
+            prev_tokens_ptr[i] = 0;
+            prev_tokens_len[i] = 0;
+        }
+    }
+
     id[0]='\0';
     while ( (tok = uint8t2token(decompress_uint8t(as, model->token_type[token_ctr]))) != ID_END ) {
         

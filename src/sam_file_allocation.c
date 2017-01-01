@@ -330,7 +330,7 @@ void reset_sam_block(sam_block sb) {
     sb->QVs->model = alloc_stream_model_qv(sb->read_length, QV_ALPHABET_SIZE + 1, rescale);
     sb->QVs->codebook_model = sb->codebook_model;
     sb->QVs->well.n = 0;
-
+    sb->reads->models = alloc_read_models_t(sb->read_length);
 }
 
 sam_block alloc_sam_models(Arithmetic_stream as, FILE * fin, FILE *fref, struct qv_options_t *qv_opts, uint8_t mode){

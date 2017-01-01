@@ -125,7 +125,7 @@ int compress_line(Arithmetic_stream as, sam_block samBlock, FILE *funmapped, uin
         memset(snpInRef, 0, MAX_BP_CHR);
     }
     
-    compress_id(as, samBlock->IDs->models, *samBlock->IDs->IDs);
+    compress_id(as, samBlock->IDs->models, *samBlock->IDs->IDs, new_block);
 
     compress_mapq(as, samBlock->mapq->models, *samBlock->mapq->mapq);
 
@@ -133,7 +133,7 @@ int compress_line(Arithmetic_stream as, sam_block samBlock, FILE *funmapped, uin
 
     //compress_read(as, samBlock->reads->models, samBlock->reads->lines, chr_change);
     
-    //compress_cigar(as, samBlock->reads->models, samBlock->reads->lines->cigar, samBlock->reads->lines->cigarFlags);
+    compress_cigar(as, samBlock->reads->models, samBlock->reads->lines->cigar, samBlock->reads->lines->cigarFlags);
 
     compress_tlen(as, samBlock->tlen->models, *samBlock->tlen->tlen);
 
@@ -181,7 +181,7 @@ int decompress_line(Arithmetic_stream as, sam_block samBlock, uint8_t lossiness,
 
     }
 
-    decompress_id(as, samBlock->IDs->models, sline.ID);
+    decompress_id(as, samBlock->IDs->models, sline.ID, new_block);
 
 
     decompress_mapq(as, samBlock->mapq->models, &sline.mapq);
@@ -190,7 +190,7 @@ int decompress_line(Arithmetic_stream as, sam_block samBlock, uint8_t lossiness,
 
     //decompression_flag = decompress_read(as,samBlock, chr_change, &sline);
     
-    //decompress_cigar(as, samBlock, &sline);
+    decompress_cigar(as, samBlock, &sline);
 
     decompress_tlen(as, samBlock->tlen->models, &sline.tlen);
 
@@ -353,8 +353,6 @@ void* decompress(void *thread_info){
 
     struct compressor_info_t *info = (struct compressor_info_t *)thread_info;
     
-
-    printf("Decompressing block %ld \n", info->block);
     Arithmetic_stream as = alloc_arithmetic_stream(info->mode, info->metadata);
     
     sam_block samBlock = alloc_sam_models(as, info->fsam, info->fref, info->qv_opts, DECOMPRESSION);
@@ -373,7 +371,6 @@ void* decompress(void *thread_info){
     long tmp;
     while (fscanf(info->size, "%ld", &tmp) == 1) {
         block_sizes.push_back(tmp);
-        printf("%ld\n", tmp);
     }
 
     if (info->block >= 0) {
