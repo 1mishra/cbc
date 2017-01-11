@@ -278,30 +278,9 @@ int main(int argc, const char * argv[]) {
             make_dir(output_name);
             change_dir(output_name);
 
-            FILE *headers_file = fopen(HEADERS, "w");
-            write_headers(comp_info.fsam, headers_file);
-            fclose(headers_file);
-
-
-            comp_info.funmapped = fopen(UNMAPPED_READS, "w");
             comp_info.fcomp = fopen(MAPPED_READS, "w");
             comp_info.qv_opts = &opts;
-            
             compress((void *)&comp_info);
-            fclose(comp_info.funmapped);
-
-            pid_t pid = fork();
-            if (pid == 0) {
-                char* argv[4];
-                argv[0] = "gzip";
-                argv[1] = "-fk";
-                argv[2] = UNMAPPED_READS;
-                argv[3] = NULL;
-                execvp(argv[0], argv);
-                exit(1);
-            }
-            waitpid(pid, NULL, 0);
-
             fclose(comp_info.fsam);
             time(&end_main);
             break;
@@ -315,36 +294,13 @@ int main(int argc, const char * argv[]) {
             }
 
             change_dir(input_name);
-            pid_t pid = fork();
-            if (pid == 0) {
-                char* argv[4];
-                argv[0] = "gzip";
-                argv[1] = "-dfk";
-                argv[2] = ZIPPED_READS;
-                argv[3] = NULL;
-                execvp(argv[0], argv);
-                exit(1);
-            }
-
-            FILE *headers_file = fopen(HEADERS, "r");
-            write_headers(headers_file, comp_info.fsam);
-            fclose(headers_file);
-
             comp_info.fcomp = fopen(MAPPED_READS, "r");
             comp_info.qv_opts = &opts;
             
             decompress((void *)&comp_info);
 
-            waitpid(pid, NULL, 0);
-            comp_info.funmapped = fopen(UNMAPPED_READS, "r");
-            char c;
-            while ( (c = getc(comp_info.funmapped)) != EOF) {
-                putc(c, comp_info.fsam);
-            }
-
             fclose(comp_info.fsam);
             fclose(comp_info.fref);
-            fclose(comp_info.funmapped);
             fclose(comp_info.fcomp);
             time(&end_main);
             break;
